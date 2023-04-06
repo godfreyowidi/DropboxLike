@@ -4,7 +4,7 @@ using File = DropboxLike.Domain.Models.File;
 
 namespace DropboxLike.Domain.Repositors;
 
-public class IFileRepository //: IRepository<File>
+public class IFileRepository : IRepository<File>
 {
   private readonly ApplicationDbContext? _dbContext;
 

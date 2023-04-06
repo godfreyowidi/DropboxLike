@@ -4,5 +4,7 @@ public class File
 {
   public int Id { get; set; }
   public string? Name { get; set; }
-  public byte[]? Size { get; set; }
+  public string? FileType { get; set; }
+  public byte[]? DataFiles { get; set; }
+  public DateTime?  CreatedOn { get; set; }
 }
