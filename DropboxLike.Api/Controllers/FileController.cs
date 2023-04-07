@@ -9,43 +9,43 @@ namespace DropboxLike.Api.Controllers;
 public class Filecontroller : ControllerBase
 {
   private readonly ApplicationDbContext _dbContext;
-  private readonly IFileRepository _repository;
+  private readonly FileRepository _repository;
 
-  public Filecontroller(ApplicationDbContext dbContext, IFileRepository repository)
+  public Filecontroller(ApplicationDbContext dbContext, FileRepository repository)
   {
     _dbContext = dbContext;
     _repository = repository;
   }
 
   [HttpPost]
-  public async Task<List<File>> PostAsync(IFormFile files)
+  public async Task<ActionResult<File>> PostAsync(IFormFile file)
   {
-    //Getting FileName
-    var fileName = Path.GetFileName(files.FileName);
-
-    //Getting file Extension
-    var fileExtension = Path.GetExtension(fileName);
-
-    // concatenating  FileName + FileExtension
-    var newFileName = String.Concat(Convert.ToString(Guid.NewGuid()), fileExtension);
-
-    var objFiles = new File()
+    if (file.Length > 0)
     {
-      Id = 0,
-      Name = newFileName,
-      FileType = fileExtension,
-      CreatedOn = DateTime.Now
-    };
+      //Getting FileName
+      var fileName = Path.GetFileName(file.FileName);
 
-    using (var target = new MemoryStream())
-    {
-      files.CopyTo(target);
-      objFiles.DataFiles = target.ToArray();
+      //Getting file Extension
+      var fileExtension = Path.GetExtension(fileName);
+
+      // concatenating  FileName + FileExtension
+      var newFileName = String.Concat(Convert.ToString(Guid.NewGuid()), fileExtension);
+
+      var objFiles = new File()
+      {
+        Id = 0,
+        Name = newFileName,
+        FileType = fileExtension,
+        CreatedOn = DateTime.Now
+      };
+
+      using (var target = new MemoryStream())
+      {
+        file.CopyTo(target);
+        objFiles.DataFiles = target.ToArray();
+      }
+      await _repository.Create(objFiles);
     }
-    var savedFiles = _repository.Create(objFiles);
-    // return await savedFiles.
-    // Route to the HOME page - this is for now! :smirk:
-    // Return the list of items - files for now
-
+    return Ok();
   }
 }
