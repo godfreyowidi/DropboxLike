@@ -1,51 +1,50 @@
+using Amazon.S3;
+using DropboxLike.Domain.Contracts;
 using DropboxLike.Domain.Data;
+using DropboxLike.Domain.Models;
 using DropboxLike.Domain.Repositors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using File = DropboxLike.Domain.Models.File;
-
+using Microsoft.Extensions.Configuration;
 
 namespace DropboxLike.Api.Controllers;
 
+[ApiController]
+[Route("[controller]")]
 public class Filecontroller : ControllerBase
 {
-  private readonly ApplicationDbContext _dbContext;
-  private readonly FileRepository _repository;
-
-  public Filecontroller(ApplicationDbContext dbContext, FileRepository repository)
+  private readonly IFileRepository _fileRepository;
+  private readonly IConfiguration _config;
+  public Filecontroller(FileRepository repository, IFileRepository fileRepository, IConfiguration config)
   {
-    _dbContext = dbContext;
-    _repository = repository;
+    _fileRepository = fileRepository;
+    _config = config;
   }
 
-  [HttpPost]
-  public async Task<ActionResult<File>> PostAsync(IFormFile file)
+  [HttpPost(Name = "UploadFile")]
+  public async Task<IActionResult> UploadFileAsync(IFormFile file)
   {
-    if (file.Length > 0)
+    await using var target = new MemoryStream();
+    await file.CopyToAsync(target);
+
+    var fileExt = Path.GetExtension(file.Name);
+    var objName = $"{Guid.NewGuid()}.{fileExt}";
+
+    var s3Obj = new FileObject()
     {
-      //Getting FileName
-      var fileName = Path.GetFileName(file.FileName);
+      BucketName = "dropboxlike",
+      InputStream = target,
+      Name = objName
+    };
 
-      //Getting file Extension
-      var fileExtension = Path.GetExtension(fileName);
+    var cred = new AwsCredentials()
+    {
+      AwsKey = _config["AwsConfiguration:AWSAccessKey"],
+      AwsSecretKey = _config["AwsConfiguration:AWSSecretKey"]
+    };
 
-      // concatenating  FileName + FileExtension
-      var newFileName = String.Concat(Convert.ToString(Guid.NewGuid()), fileExtension);
+    var res = await _fileRepository.UploadFileAsync(s3Obj, cred);
 
-      var objFiles = new File()
-      {
-        Id = 0,
-        Name = newFileName,
-        FileType = fileExtension,
-        CreatedOn = DateTime.Now
-      };
-
-      using (var target = new MemoryStream())
-      {
-        file.CopyTo(target);
-        objFiles.DataFiles = target.ToArray();
-      }
-      await _repository.Create(objFiles);
-    }
-    return Ok();
+    return Ok(res);
   }
 }
