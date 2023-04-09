@@ -3,6 +3,9 @@ using DropboxLike.Domain.Repositors;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddAuthorization();
+builder.Services.AddControllers();
+
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 
 var app = builder.Build();
@@ -19,6 +22,9 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 app.Run();

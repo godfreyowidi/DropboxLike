@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 namespace DropboxLike.Api.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class Filecontroller : ControllerBase
 {
   private readonly IFileRepository _fileRepository;
@@ -21,7 +21,8 @@ public class Filecontroller : ControllerBase
     _config = config;
   }
 
-  [HttpPost(Name = "UploadFile")]
+  [HttpPost]
+  [Route("Upload")]
   public async Task<IActionResult> UploadFileAsync(IFormFile file)
   {
     await using var target = new MemoryStream();
