@@ -10,7 +10,7 @@
 *.userosscache
 *.sln.docstates
 
- Dropboxlike/appsettings.json
+ Dropboxlike.Api/appsettings.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
