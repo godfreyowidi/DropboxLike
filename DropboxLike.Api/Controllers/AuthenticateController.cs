@@ -1,6 +1,5 @@
-using DropboxLike.Domain.Repositories.Token;
+using DropboxLike.Domain.Services.Token;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace DropboxLike.Api.Controllers;
 
