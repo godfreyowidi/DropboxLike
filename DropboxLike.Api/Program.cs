@@ -1,8 +1,10 @@
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Repositories.File;
+using DropboxLike.Domain.Repositories.User;
 using DropboxLike.Domain.Services.File;
 using DropboxLike.Domain.Services.Token;
+using DropboxLike.Domain.Services.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -31,9 +33,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // 2. Add lowest layer components, namely repositories.
 builder.Services.AddScoped<IFileRepository, FileRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // 3. Add higher layer components, namely services.
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // 4. Add even higher layer components, namely controllers and the related authorization and authentication.
 builder.Services.AddScoped<ITokenManager, TokenManager>();
