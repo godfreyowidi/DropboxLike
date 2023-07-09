@@ -1,15 +1,13 @@
-using DropboxLike.Domain.Models;
-using DropboxLike.Domain.Repositories;
-using DropboxLike.Domain.Services;
+using DropboxLike.Domain.Services.File;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using File = DropboxLike.Domain.Models.File;
-
 
 namespace DropboxLike.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class FileController : ControllerBase
+[Authorize]
+public class FileController : BaseController
 {
   private readonly IFileService _fileService;
 
@@ -22,6 +20,8 @@ public class FileController : ControllerBase
   [Route("Upload")]
   public async Task<IActionResult> UploadFileAsync(IFormFile file)
   {
+    var claims = GetClaims(); // TODO: Extract user ID from claims to create file FOR THAT USER.
+    
     var response = await _fileService.UploadSingleFileAsync(file);
 
     return StatusCode(response.StatusCode);
@@ -31,6 +31,8 @@ public class FileController : ControllerBase
   [Route("Download/{fileId}")]
   public async Task<IActionResult> DownloadFileAsync(string fileId)
   {
+    var claims = GetClaims(); // TODO: Extract user ID from claims to download file OWNED BY THAT USER.
+    
     var response = await _fileService.DownloadSingleFileAsync(fileId);
 
     if (!response.IsSuccessful)
@@ -46,21 +48,19 @@ public class FileController : ControllerBase
   [Route("List")]
   public async Task<IActionResult> ListFilesAsync()
   {
+    var claims = GetClaims(); // TODO: Extract user ID from claims to list files OWNED BY THAT USER.
+    
     var response = await _fileService.ListBucketFilesAsync();
     
-    if (!response.IsSuccessful)
-    {
-      var message = $"Due to '{response.FailureMessage ?? "<>"}', your list was not loaded. Refresh your page!";
-      return StatusCode(response.StatusCode, message);
-    }
-    
-    return Ok(response.Result);
+    return Ok(response);
   }
 
   [HttpDelete]
   [Route("Delete/{fileId}")]
   public async Task<IActionResult> DeleteFileAsync(string fileId)
   {
+    var claims = GetClaims(); // TODO: Extract user ID from claims to delete file OWNED BY THAT USER.
+    
     var response = await _fileService.DeleteSingleFileAsync(fileId);
     if (response.IsSuccessful) return NoContent();
     var message = $"Failed to delete file with ID {fileId} due to '{response.FailureMessage ?? "<>"}'";

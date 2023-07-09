@@ -1,8 +1,7 @@
 using DropboxLike.Domain.Models;
-using DropboxLike.Domain.Repositories;
-using File = DropboxLike.Domain.Models.File;
+using DropboxLike.Domain.Repositories.File;
 
-namespace DropboxLike.Domain.Services;
+namespace DropboxLike.Domain.Services.File;
 
 public class FileService : IFileService
 {
@@ -18,7 +17,7 @@ public class FileService : IFileService
         return await _fileRepository.UploadFileAsync(file);
     }
 
-    public async Task<OperationResult<File>> DownloadSingleFileAsync(string fileId)
+    public async Task<OperationResult<Models.File>> DownloadSingleFileAsync(string fileId)
     {
         return await _fileRepository.DownloadFileAsync(fileId);
     }
@@ -28,7 +27,7 @@ public class FileService : IFileService
         return await _fileRepository.DeleteFileAsync(fileId);
     }
 
-    public async Task<List<FileEntity>> ListBucketFilesAsync()
+    public async Task<OperationResult<List<FileEntity>>> ListBucketFilesAsync()
     {
         return await _fileRepository.ListFilesAsync();
     }

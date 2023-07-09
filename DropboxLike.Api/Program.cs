@@ -1,18 +1,15 @@
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
+using DropboxLike.Domain.Repositories.File;
+using DropboxLike.Domain.Repositories.User;
+using DropboxLike.Domain.Services.File;
+using DropboxLike.Domain.Services.Token;
+using DropboxLike.Domain.Services.User;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
-
-var region = Environment.GetEnvironmentVariable("AWS_REGION");
-var secret = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
-var access = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY");
-
-Console.WriteLine("AWS_REGION: " + region);
-Console.WriteLine("AWS_SECRET: " + secret);
-Console.WriteLine("AWS_KEY: " + access);
-
 
 // 1. Add configuration.
 builder.Services.Configure<AwsConfiguration>(options =>
@@ -35,13 +32,38 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }));
 
 // 2. Add lowest layer components, namely repositories.
-builder.Services.AddScoped<DropboxLike.Domain.Repositories.IFileRepository, DropboxLike.Domain.Repositories.FileRepository>();
+builder.Services.AddScoped<IFileRepository, FileRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // 3. Add higher layer components, namely services.
-builder.Services.AddScoped<DropboxLike.Domain.Services.IFileService, DropboxLike.Domain.Services.FileService>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // 4. Add even higher layer components, namely controllers and the related authorization and authentication.
+builder.Services.AddScoped<ITokenManager, TokenManager>();
+
+// 5. Add authentication as JWT validation logic.
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(x =>
+{
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey("rekfjdhabdjekkrnabrisnakelsntjsn"u8.ToArray()),
+        ValidateLifetime = true,
+        ValidateAudience = true,
+        ValidateIssuer = true,
+        ValidIssuer = "localhost",
+        ValidAudience = "DropboxLike",
+        ClockSkew = TimeSpan.Zero
+    };
+});
 builder.Services.AddAuthorization();
+
+// 5. Add controllers.
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -56,6 +78,7 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
