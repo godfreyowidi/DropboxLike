@@ -22,9 +22,9 @@ public class TokenManager : ITokenManager
     {
         _applicationDbContext = applicationDbContext;
         _tokenHandler = new JwtSecurityTokenHandler();
-        _secretKey = "rekfjdhabdjekkrnabrisnakelsntjsn"u8.ToArray();
+        _secretKey = Convert.FromBase64String(Convert.ToBase64String(Encoding.UTF8.GetBytes("rekfjdhabdjekkrnabrisnakelsntjsn")));
     }
-    
+
     public async Task<OperationResult<bool>> Authenticate(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))

@@ -49,33 +49,21 @@ public class UserRepository : IUserRepository
                 Password = hashedPassword,
             };
 
-            var executionStrategy = _applicationDbContext.Database.CreateExecutionStrategy();
+            _applicationDbContext.AppUsers?.Add(newUser);
+            await _applicationDbContext.SaveChangesAsync();
 
-            await executionStrategy.ExecuteAsync(async () =>
+            try
             {
-                using (var transaction = _applicationDbContext.Database.BeginTransaction())
-                {
-                    try
-                    {
-                        _applicationDbContext.AppUsers?.Add(newUser);
-                        await _applicationDbContext.SaveChangesAsync();
+                await CreateS3BucketFolder(newUser.Id.ToString());
+            }
+            catch (Exception ex)
+            {
+                _applicationDbContext.AppUsers?.Remove(newUser);
+                await _applicationDbContext.SaveChangesAsync();
 
-                        await CreateS3BucketFolder(newUser.Id.ToString());
-
-                        await transaction.CommitAsync();
-
-
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        throw ex;
-                    }
-                }
-            }); 
-            
+                throw ex;
+            }
             return OperationResult<UserEntity>.Success(newUser);
-
         }
         catch (Exception ex)
         {
@@ -89,7 +77,7 @@ public class UserRepository : IUserRepository
         var request = new PutObjectRequest
         {
             BucketName = _bucketName,
-            Key = $"{userId}/",
+            Key = $"user_{userId}/",
             ContentBody = string.Empty
         };
         await _awsS3Client.PutObjectAsync(request);

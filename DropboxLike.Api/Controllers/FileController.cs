@@ -15,7 +15,7 @@ public class FileController : BaseController
   {
     _fileService = fileService;
   }
-
+  
   [HttpPost]
   [Route("Upload")]
   public async Task<IActionResult> UploadFileAsync(IFormFile file)
