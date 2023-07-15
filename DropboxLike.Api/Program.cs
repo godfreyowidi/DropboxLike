@@ -16,6 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<AwsConfiguration>(options =>
 {
     options.BucketName = builder.Configuration.GetSection("Aws:BucketName").Get<string>() ?? string.Empty;
+    // options.BucketName = builder.Configuration.GetSection("Aws:AWS_ACCESS_KEY").Get<string>() ?? string.Empty;
+    // options.BucketName = builder.Configuration.GetSection("Aws:AWS_SECRET_ACCESS_KEY").Get<string>() ?? string.Empty;
+    // options.BucketName = builder.Configuration.GetSection("Aws:AWS_REGION").Get<string>() ?? string.Empty;
+
     options.AwsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY") ?? string.Empty;
     options.AwsSecretAccessKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY") ?? string.Empty;
     options.Region = Environment.GetEnvironmentVariable("AWS_REGION") ?? string.Empty;

@@ -16,7 +16,7 @@ public class UserRepository : IUserRepository
 {
     private readonly ApplicationDbContext _applicationDbContext;
     private readonly IAmazonS3 _awsS3Client;
-    private readonly string _bucketName;
+    private readonly string? _bucketName;
 
 
     public UserRepository(ApplicationDbContext applicationDbContext, IOptions<AwsConfiguration> options)
@@ -24,7 +24,7 @@ public class UserRepository : IUserRepository
         var configuration = options.Value;
         _applicationDbContext = applicationDbContext;
         _bucketName = configuration.BucketName;
-        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.GetBySystemName(configuration.Region));
+        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.USEast1); //.GetBySystemName(configuration.Region));
     }
 
     public async Task<OperationResult<UserEntity>> RegisterUserAsync(string email, string password)
