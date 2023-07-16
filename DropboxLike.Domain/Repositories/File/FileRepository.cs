@@ -14,7 +14,7 @@ namespace DropboxLike.Domain.Repositories.File;
 
 public class FileRepository : IFileRepository
 {
-  private readonly string _bucketName;
+  private readonly string? _bucketName;
   private readonly ApplicationDbContext _applicationDbContext;
   private readonly IAmazonS3 _awsS3Client;
   public FileRepository(IOptions<AwsConfiguration> options, ApplicationDbContext applicationDbContext)
