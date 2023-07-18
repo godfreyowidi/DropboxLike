@@ -7,7 +7,8 @@ public class BaseController : ControllerBase
 {
     protected string GetUserIdFromClaim()
     {
-        return HttpContext.User.FindFirst("userId")!.Value;
+        var userIdClaim = HttpContext.User.FindFirst("userId");
+        return userIdClaim?.Value ?? ""; 
     }
 
 }

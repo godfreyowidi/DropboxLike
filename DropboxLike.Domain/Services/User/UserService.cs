@@ -13,7 +13,7 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
-    public async Task<OperationResult<UserEntity>> RegisterUserAsync(string email, string password)
+    public async Task<OperationResult<string>> RegisterUserAsync(string email, string password)
     {
         return await _userRepository.RegisterUserAsync(email, password);
     }

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Amazon;
@@ -24,10 +25,10 @@ public class UserRepository : IUserRepository
         var configuration = options.Value;
         _applicationDbContext = applicationDbContext;
         _bucketName = configuration.BucketName;
-        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.USEast1); //.GetBySystemName(configuration.Region));
+        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.GetBySystemName(configuration.Region));
     }
 
-    public async Task<OperationResult<UserEntity>> RegisterUserAsync(string email, string password)
+    public async Task<OperationResult<string>> RegisterUserAsync(string email, string password)
     {
         try
         {
@@ -37,7 +38,7 @@ public class UserRepository : IUserRepository
 
                 if (existingUser != null)
                 {
-                    return OperationResult<UserEntity>.Fail("User already exist");
+                    return OperationResult<string>.Fail("User already exist");
                 }
             }
 
@@ -54,7 +55,7 @@ public class UserRepository : IUserRepository
 
             try
             {
-                await CreateS3BucketFolder(newUser.Id.ToString());
+                await CreateS3BucketFolder(newUser.Id!.ToString());
             }
             catch (Exception ex)
             {
@@ -63,11 +64,11 @@ public class UserRepository : IUserRepository
 
                 throw ex;
             }
-            return OperationResult<UserEntity>.Success(newUser);
+            return OperationResult<string>.Success(newUser.Id!.ToString(), HttpStatusCode.Created);
         }
         catch (Exception ex)
         {
-            return OperationResult<UserEntity>.Fail(ex.Message);
+            return OperationResult<string>.Fail(ex.Message, HttpStatusCode.InternalServerError);
         }
 
     }

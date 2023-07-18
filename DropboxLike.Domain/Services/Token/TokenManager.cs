@@ -2,11 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Amazon.S3.Model;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Data.Entities;
 using DropboxLike.Domain.Models;
-using DropboxLike.Domain.Repositories.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 

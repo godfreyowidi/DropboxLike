@@ -22,7 +22,7 @@ public class FileController : BaseController
   {
     var userId = GetUserIdFromClaim();
    
-    var response = await _fileService.UploadSingleFileAsync(file);
+    var response = await _fileService.UploadSingleFileAsync(file, userId);
 
     return StatusCode(response.StatusCode);
   }

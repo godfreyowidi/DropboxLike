@@ -7,14 +7,14 @@ public class FileService : IFileService
 {
     private readonly IFileRepository _fileRepository;
 
-    public FileService(IFileRepository fileRepository)
-    {
-        _fileRepository = fileRepository;
-    }
+  public FileService(IFileRepository fileRepository)
+  {
+    _fileRepository = fileRepository;
+  }
 
-    public async Task<OperationResult<object>> UploadSingleFileAsync(IFormFile file)
+    public async Task<OperationResult<object>> UploadSingleFileAsync(IFormFile file, string userId)
     {
-        return await _fileRepository.UploadFileAsync(file);
+        return await _fileRepository.UploadFileAsync(file, userId);
     }
 
     public async Task<OperationResult<Models.File>> DownloadSingleFileAsync(string fileId)
