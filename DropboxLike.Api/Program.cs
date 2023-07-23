@@ -1,4 +1,5 @@
 using System.Text;
+using DropboxLike.Api.Authentication;
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Repositories.File;
@@ -83,6 +84,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
+app.UseCustomClaimValidation();
 app.UseAuthorization();
 
 app.MapControllers();
