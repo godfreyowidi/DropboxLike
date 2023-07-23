@@ -23,7 +23,7 @@ public class AuthenticateController : ControllerBase
         var result = await _tokenManager.Authenticate(email, password);
         if (result.IsSuccessful)
         {
-            return Ok(new { Token = _tokenManager.NewToken(email) });
+            return Ok(new { Token = _tokenManager.NewToken(email, result.Value) });
         }
 
         if (result.FailureMessage != null) ModelState.AddModelError("Unauthorized", result.FailureMessage);
