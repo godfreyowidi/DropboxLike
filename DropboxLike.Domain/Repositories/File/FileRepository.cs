@@ -19,15 +19,12 @@ public class FileRepository : IFileRepository
   private readonly ApplicationDbContext _applicationDbContext;
   private readonly IAmazonS3 _awsS3Client;
 
-  private readonly IHttpContextAccessor _httpContextAccessor;
-
-  public FileRepository(IOptions<AwsConfiguration> options, ApplicationDbContext applicationDbContext, IHttpContextAccessor httpContextAccessor)
+  public FileRepository(IOptions<AwsConfiguration> options, ApplicationDbContext applicationDbContext)
   {
     var configuration = options.Value;
     _bucketName = configuration.BucketName;
     _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.GetBySystemName(configuration.Region));
     _applicationDbContext = applicationDbContext;
-    _httpContextAccessor = httpContextAccessor;
   }
 
   public async Task<OperationResult<object>> UploadFileAsync(IFormFile file, string userId)

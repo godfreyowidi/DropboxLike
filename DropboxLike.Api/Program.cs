@@ -33,9 +33,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         );
     }));
 
-// Register IHttpContextAccessor
-builder.Services.AddHttpContextAccessor();
-
 // 2. Add lowest layer components, namely repositories.
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();

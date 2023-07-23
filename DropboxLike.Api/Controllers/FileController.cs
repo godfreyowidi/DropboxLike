@@ -21,7 +21,7 @@ public class FileController : BaseController
   public async Task<IActionResult> UploadFileAsync(IFormFile file)
   {
     var userId = GetUserIdFromClaim();
-   
+
     var response = await _fileService.UploadSingleFileAsync(file, userId);
 
     return StatusCode(response.StatusCode);

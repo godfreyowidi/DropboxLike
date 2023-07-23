@@ -25,7 +25,8 @@ public class UserRepository : IUserRepository
         var configuration = options.Value;
         _applicationDbContext = applicationDbContext;
         _bucketName = configuration.BucketName;
-        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.GetBySystemName(configuration.Region));
+        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey,
+            RegionEndpoint.GetBySystemName(configuration.Region));
     }
 
     public async Task<OperationResult<string>> RegisterUserAsync(string email, string password)
@@ -79,7 +80,8 @@ public class UserRepository : IUserRepository
         {
             BucketName = _bucketName,
             Key = $"user_{userId}/",
-            ContentBody = string.Empty
+            ContentBody = string.Empty,
+            CannedACL = S3CannedACL.NoACL
         };
         await _awsS3Client.PutObjectAsync(request);
     }
