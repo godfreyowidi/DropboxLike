@@ -1,5 +1,5 @@
+using System.Security.Claims;
 using System.Text;
-using DropboxLike.Api.Authentication;
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Repositories.File;
@@ -63,7 +63,15 @@ builder.Services.AddAuthentication(x =>
         ClockSkew = TimeSpan.Zero
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Bearer", policy =>
+    {
+        policy.RequireClaim(ClaimTypes.Email);
+        policy.RequireClaim(ClaimTypes.NameIdentifier);
+    });
+    options.DefaultPolicy = options.GetPolicy("Bearer")!;
+});
 
 // 5. Add controllers.
 builder.Services.AddControllers();
@@ -81,7 +89,6 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
-app.UseCustomClaimValidation();
 app.UseAuthorization();
 
 app.MapControllers();
