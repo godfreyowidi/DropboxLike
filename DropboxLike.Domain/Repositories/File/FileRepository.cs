@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Claims;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -14,9 +15,10 @@ namespace DropboxLike.Domain.Repositories.File;
 
 public class FileRepository : IFileRepository
 {
-  private readonly string _bucketName;
+  private readonly string? _bucketName;
   private readonly ApplicationDbContext _applicationDbContext;
   private readonly IAmazonS3 _awsS3Client;
+
   public FileRepository(IOptions<AwsConfiguration> options, ApplicationDbContext applicationDbContext)
   {
     var configuration = options.Value;
@@ -25,39 +27,49 @@ public class FileRepository : IFileRepository
     _applicationDbContext = applicationDbContext;
   }
 
-  public async Task<OperationResult<object>> UploadFileAsync(IFormFile file)
+  public async Task<OperationResult<object>> UploadFileAsync(IFormFile file, string userId)
   {
+    if (file == null || file.Length == 0)
+    {
+      return OperationResult<object>.Fail("Invalid file.", HttpStatusCode.BadRequest);
+    }
+    
     try
     {
-      using (var newMemoryStream = new MemoryStream())
+      var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Id == userId);
+      
+      if (user == null)
       {
-        await file.CopyToAsync(newMemoryStream);
-        var uploadRequest = new TransferUtilityUploadRequest
-        {
-          InputStream = newMemoryStream,
-          Key = $"{Guid.NewGuid()}",
-          BucketName = _bucketName,
-          ContentType = file.ContentType,
-          CannedACL = S3CannedACL.NoACL
-        };
-        var transferUtility = new TransferUtility(_awsS3Client);
-
-        await transferUtility.UploadAsync(uploadRequest);
-
-        var fileModel = new FileEntity
-        {
-          FileKey = uploadRequest.Key,
-          FileName = file.FileName,
-          FileSize = file.Length.ToString(),
-          ContentType = file.ContentType,
-          TimeStamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)
-        };
-
-        _applicationDbContext.FileModels.Add(fileModel);
-        await _applicationDbContext.SaveChangesAsync();
-
-        return OperationResult<object>.Success(new object(), HttpStatusCode.Created);
+        return OperationResult<object>.Fail("User not found.", HttpStatusCode.NotFound);
       }
+      
+      using var newMemoryStream = new MemoryStream();
+      await file.CopyToAsync(newMemoryStream);
+      var uploadRequest = new TransferUtilityUploadRequest
+      {
+        InputStream = newMemoryStream,
+        Key = $"user_{user.Id}/{file.FileName}",
+        BucketName = _bucketName,
+        ContentType = file.ContentType,
+        CannedACL = S3CannedACL.NoACL
+      };
+      var transferUtility = new TransferUtility(_awsS3Client);
+
+      await transferUtility.UploadAsync(uploadRequest);
+
+      var fileModel = new FileEntity
+      {
+        FileKey = uploadRequest.Key,
+        FileName = file.FileName,
+        FileSize = file.Length.ToString(),
+        ContentType = file.ContentType,
+        TimeStamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)
+      };
+
+      _applicationDbContext.FileModels?.Add(fileModel);
+      await _applicationDbContext.SaveChangesAsync();
+
+      return OperationResult<object>.Success(new object(), HttpStatusCode.Created);
     }
     catch (AmazonS3Exception exception)
     {

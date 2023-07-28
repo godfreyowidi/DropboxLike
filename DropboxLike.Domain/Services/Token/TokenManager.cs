@@ -2,11 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Amazon.S3.Model;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Data.Entities;
 using DropboxLike.Domain.Models;
-using DropboxLike.Domain.Repositories.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -22,28 +20,24 @@ public class TokenManager : ITokenManager
     {
         _applicationDbContext = applicationDbContext;
         _tokenHandler = new JwtSecurityTokenHandler();
-        _secretKey = "rekfjdhabdjekkrnabrisnakelsntjsn"u8.ToArray();
+        _secretKey = Convert.FromBase64String(Convert.ToBase64String(Encoding.UTF8.GetBytes("rekfjdhabdjekkrnabrisnakelsntjsn")));
     }
-    
-    public async Task<OperationResult<bool>> Authenticate(string email, string password)
+
+    public async Task<OperationResult<string>> Authenticate(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            return OperationResult<bool>.Fail("Email and password are required");
+            return OperationResult<string>.Fail("Email and password are required");
         }
 
         var user = await GetUserByEmail(email);
 
-        if (user != null)
-        {
-            var hashedPassword = HashPassword(password);
+        if (user == null) return OperationResult<string>.Fail("Incorrect Password");
+        var hashedPassword = HashPassword(password);
 
-            if (hashedPassword == user.Password)
-            {
-                return OperationResult<bool>.Success(true);
-            }
-        }
-        return OperationResult<bool>.Fail("Incorrect Password");
+        return hashedPassword == user.Password
+            ? OperationResult<string>.Success(user.Id)
+            : OperationResult<string>.Fail("Incorrect Password");
     }
 
     private static string HashPassword(string password)
@@ -64,11 +58,12 @@ public class TokenManager : ITokenManager
         return user;
     }
 
-    public string NewToken(string email)
+    public string NewToken(string email, string userId)
     {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Email, email)
+            new(ClaimTypes.Email, email),
+            new(ClaimTypes.NameIdentifier, userId)
         };
         
         var tokenDescriptor = new SecurityTokenDescriptor

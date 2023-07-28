@@ -18,14 +18,12 @@ public class AuthenticateController : ControllerBase
         _userService = userService;
     }
     
-   // [HttpPost]
-   // [Route("login")]
     public async Task<IActionResult> Authenticate(string email, string password)
     {
         var result = await _tokenManager.Authenticate(email, password);
         if (result.IsSuccessful)
         {
-            return Ok(new { Token = _tokenManager.NewToken(email) });
+            return Ok(new { Token = _tokenManager.NewToken(email, result.Value) });
         }
 
         if (result.FailureMessage != null) ModelState.AddModelError("Unauthorized", result.FailureMessage);
@@ -36,13 +34,14 @@ public class AuthenticateController : ControllerBase
     [Route("register")]
     public async Task<IActionResult> RegisterUser(UserEntity request)
     {
-        var result = await _userService.RegisterUserAsync(request.Email, request.Password);
+        var result = await _userService.RegisterUserAsync(request.Email!, request.Password!);
 
         if (result.IsSuccessful)
         {
-            return Ok(result.StatusCode);
+            var userId = result.Value;
+            return Ok(new {Id = userId});
         }
 
-        return BadRequest(result.FailureMessage);
+        return StatusCode(result.StatusCode, result.FailureMessage);
     }
 }

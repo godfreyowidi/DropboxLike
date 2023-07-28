@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Amazon;
@@ -16,7 +17,7 @@ public class UserRepository : IUserRepository
 {
     private readonly ApplicationDbContext _applicationDbContext;
     private readonly IAmazonS3 _awsS3Client;
-    private readonly string _bucketName;
+    private readonly string? _bucketName;
 
 
     public UserRepository(ApplicationDbContext applicationDbContext, IOptions<AwsConfiguration> options)
@@ -24,10 +25,11 @@ public class UserRepository : IUserRepository
         var configuration = options.Value;
         _applicationDbContext = applicationDbContext;
         _bucketName = configuration.BucketName;
-        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey, RegionEndpoint.GetBySystemName(configuration.Region));
+        _awsS3Client = new AmazonS3Client(configuration.AwsAccessKey, configuration.AwsSecretAccessKey,
+            RegionEndpoint.GetBySystemName(configuration.Region));
     }
 
-    public async Task<OperationResult<UserEntity>> RegisterUserAsync(string email, string password)
+    public async Task<OperationResult<string>> RegisterUserAsync(string email, string password)
     {
         try
         {
@@ -37,7 +39,7 @@ public class UserRepository : IUserRepository
 
                 if (existingUser != null)
                 {
-                    return OperationResult<UserEntity>.Fail("User already exist");
+                    return OperationResult<string>.Fail("User already exist");
                 }
             }
 
@@ -49,37 +51,25 @@ public class UserRepository : IUserRepository
                 Password = hashedPassword,
             };
 
-            var executionStrategy = _applicationDbContext.Database.CreateExecutionStrategy();
+            _applicationDbContext.AppUsers?.Add(newUser);
+            await _applicationDbContext.SaveChangesAsync();
 
-            await executionStrategy.ExecuteAsync(async () =>
+            try
             {
-                using (var transaction = _applicationDbContext.Database.BeginTransaction())
-                {
-                    try
-                    {
-                        _applicationDbContext.AppUsers?.Add(newUser);
-                        await _applicationDbContext.SaveChangesAsync();
+                await CreateS3BucketFolder(newUser.Id!.ToString());
+            }
+            catch (Exception ex)
+            {
+                _applicationDbContext.AppUsers?.Remove(newUser);
+                await _applicationDbContext.SaveChangesAsync();
 
-                        await CreateS3BucketFolder(newUser.Id.ToString());
-
-                        await transaction.CommitAsync();
-
-
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        throw ex;
-                    }
-                }
-            }); 
-            
-            return OperationResult<UserEntity>.Success(newUser);
-
+                throw ex;
+            }
+            return OperationResult<string>.Success(newUser.Id!.ToString(), HttpStatusCode.Created);
         }
         catch (Exception ex)
         {
-            return OperationResult<UserEntity>.Fail(ex.Message);
+            return OperationResult<string>.Fail(ex.Message, HttpStatusCode.InternalServerError);
         }
 
     }
@@ -89,8 +79,9 @@ public class UserRepository : IUserRepository
         var request = new PutObjectRequest
         {
             BucketName = _bucketName,
-            Key = $"{userId}/",
-            ContentBody = string.Empty
+            Key = $"user_{userId}/",
+            ContentBody = string.Empty,
+            CannedACL = S3CannedACL.NoACL
         };
         await _awsS3Client.PutObjectAsync(request);
     }

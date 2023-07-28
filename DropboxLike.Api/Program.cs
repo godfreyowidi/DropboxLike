@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Text;
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Repositories.File;
@@ -21,7 +23,7 @@ builder.Services.Configure<AwsConfiguration>(options =>
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DropboxLikeConn"),
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     sqlServerOptionsAction: sqlOptions => 
     {
         sqlOptions.EnableRetryOnFailure(
@@ -52,7 +54,7 @@ builder.Services.AddAuthentication(x =>
     x.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey("rekfjdhabdjekkrnabrisnakelsntjsn"u8.ToArray()),
+        IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(Convert.ToBase64String(Encoding.UTF8.GetBytes("rekfjdhabdjekkrnabrisnakelsntjsn")))),
         ValidateLifetime = true,
         ValidateAudience = true,
         ValidateIssuer = true,
@@ -61,7 +63,15 @@ builder.Services.AddAuthentication(x =>
         ClockSkew = TimeSpan.Zero
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Bearer", policy =>
+    {
+        policy.RequireClaim(ClaimTypes.Email);
+        policy.RequireClaim(ClaimTypes.NameIdentifier);
+    });
+    options.DefaultPolicy = options.GetPolicy("Bearer")!;
+});
 
 // 5. Add controllers.
 builder.Services.AddControllers();

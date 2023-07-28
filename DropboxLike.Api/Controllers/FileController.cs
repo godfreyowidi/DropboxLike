@@ -15,14 +15,14 @@ public class FileController : BaseController
   {
     _fileService = fileService;
   }
-
+  
   [HttpPost]
   [Route("Upload")]
   public async Task<IActionResult> UploadFileAsync(IFormFile file)
   {
-    var claims = GetClaims(); // TODO: Extract user ID from claims to create file FOR THAT USER.
-    
-    var response = await _fileService.UploadSingleFileAsync(file);
+    var userId = GetUserIdFromClaim();
+
+    var response = await _fileService.UploadSingleFileAsync(file, userId);
 
     return StatusCode(response.StatusCode);
   }
@@ -31,7 +31,7 @@ public class FileController : BaseController
   [Route("Download/{fileId}")]
   public async Task<IActionResult> DownloadFileAsync(string fileId)
   {
-    var claims = GetClaims(); // TODO: Extract user ID from claims to download file OWNED BY THAT USER.
+    var userId = GetUserIdFromClaim();
     
     var response = await _fileService.DownloadSingleFileAsync(fileId);
 
@@ -48,7 +48,7 @@ public class FileController : BaseController
   [Route("List")]
   public async Task<IActionResult> ListFilesAsync()
   {
-    var claims = GetClaims(); // TODO: Extract user ID from claims to list files OWNED BY THAT USER.
+    var userId = GetUserIdFromClaim();
     
     var response = await _fileService.ListBucketFilesAsync();
     
@@ -59,7 +59,7 @@ public class FileController : BaseController
   [Route("Delete/{fileId}")]
   public async Task<IActionResult> DeleteFileAsync(string fileId)
   {
-    var claims = GetClaims(); // TODO: Extract user ID from claims to delete file OWNED BY THAT USER.
+    var userId = GetUserIdFromClaim();
     
     var response = await _fileService.DeleteSingleFileAsync(fileId);
     if (response.IsSuccessful) return NoContent();
