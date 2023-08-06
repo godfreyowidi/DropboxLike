@@ -2,9 +2,13 @@ using System.Security.Claims;
 using System.Text;
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
+using DropboxLike.Domain.Models;
+using DropboxLike.Domain.Repositories.Email;
 using DropboxLike.Domain.Repositories.File;
+using DropboxLike.Domain.Repositories.Share;
 using DropboxLike.Domain.Repositories.User;
 using DropboxLike.Domain.Services.File;
+using DropboxLike.Domain.Services.Share;
 using DropboxLike.Domain.Services.Token;
 using DropboxLike.Domain.Services.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,13 +40,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 2. Add lowest layer components, namely repositories.
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IShareFileRepository, ShareFileRepository>();
 
 // 3. Add higher layer components, namely services.
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IShareFileService, ShareFileService>();
 
 // 4. Add even higher layer components, namely controllers and the related authorization and authentication.
 builder.Services.AddScoped<ITokenManager, TokenManager>();
+
+// Add email service configuratio
+var emailConfig = builder.Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
+
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
+builder.Services.AddSingleton(emailConfig);
+
 
 // 5. Add authentication as JWT validation logic.
 builder.Services.AddAuthentication(x =>

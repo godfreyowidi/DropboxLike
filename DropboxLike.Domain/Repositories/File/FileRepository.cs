@@ -44,11 +44,12 @@ public class FileRepository : IFileRepository
       }
       
       using var newMemoryStream = new MemoryStream();
+      var filePath = $"user_{user.Id}/{file.FileName}";
       await file.CopyToAsync(newMemoryStream);
       var uploadRequest = new TransferUtilityUploadRequest
       {
         InputStream = newMemoryStream,
-        Key = $"user_{user.Id}/{file.FileName}",
+        Key = filePath,
         BucketName = _bucketName,
         ContentType = file.ContentType,
         CannedACL = S3CannedACL.NoACL
@@ -56,11 +57,15 @@ public class FileRepository : IFileRepository
       var transferUtility = new TransferUtility(_awsS3Client);
 
       await transferUtility.UploadAsync(uploadRequest);
+      
+      // https://dropboxlike.s3.amazonaws.com/user_0e627459-e44a-4f34-b53a-487bbac27043/godfreyowidi_accessKeys.csv
+      // s3://dropboxlike/user_0e627459-e44a-4f34-b53a-487bbac27043/godfreyowidi_accessKeys.csv
 
       var fileModel = new FileEntity
       {
         FileKey = uploadRequest.Key,
         FileName = file.FileName,
+        FilePath = filePath,
         FileSize = file.Length.ToString(),
         ContentType = file.ContentType,
         TimeStamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)
@@ -87,7 +92,7 @@ public class FileRepository : IFileRepository
   {
     try
     {
-      var file = await _applicationDbContext.FileModels.FindAsync(fileId);
+      var file = await _applicationDbContext.FileModels!.FindAsync(fileId);
       if (file == null)
       {
         throw new FileNotFoundException("File not Found");
@@ -115,7 +120,7 @@ public class FileRepository : IFileRepository
         if (file?.FileKey == obj)
         {
           var downloadFileName = file.FileName;
-          var filePath = Path.Combine("/home/godfreyowidi/Downloads/DropboxLike", downloadFileName);
+          var filePath = Path.Combine("/home/godfreyowidi/Downloads/DropboxLike", downloadFileName!);
 
           var request = new GetObjectRequest
           {
@@ -157,7 +162,7 @@ public class FileRepository : IFileRepository
   {
     try
     {
-      var files = await _applicationDbContext.FileModels.ToListAsync();
+      var files = await _applicationDbContext.FileModels!.ToListAsync();
       return OperationResult<List<FileEntity>>.Success(files);
     }
     catch (Exception exception)
@@ -169,7 +174,7 @@ public class FileRepository : IFileRepository
 
   public async Task<OperationResult<object>> DeleteFileAsync(string fileId)
   {
-    var results = await _applicationDbContext.FileModels
+    var results = await _applicationDbContext.FileModels!
         .FirstOrDefaultAsync(x => x.FileKey == fileId);
 
     var listRequest = new ListObjectsV2Request
@@ -189,7 +194,7 @@ public class FileRepository : IFileRepository
 
       await _awsS3Client.DeleteObjectAsync(request);
 
-      _applicationDbContext.FileModels.Remove(results);
+      _applicationDbContext.FileModels!.Remove(results);
       await _applicationDbContext.SaveChangesAsync();
 
       return OperationResult<object>.Success(new object(), HttpStatusCode.NoContent);

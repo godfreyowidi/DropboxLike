@@ -4,11 +4,13 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
+using DropboxLike.Domain.Data.Entities;
+using DropboxLike.Domain.Models;
 using Microsoft.Extensions.Options;
 
 namespace DropboxLike.Domain.Repositories.Share;
 
-public class ShareFileRepository
+public class ShareFileRepository : IShareFileRepository
 {
     private readonly string? _bucketName;
     private readonly ApplicationDbContext _applicationDbContext;
@@ -22,17 +24,13 @@ public class ShareFileRepository
         _applicationDbContext = applicationDbContext;
     }
 
-    public string GeneratePreSignedURL(FileEntity file)
+    public List<ShareEntity> GetSharedFilesForUser(string loggedInUserEmail)
     {
-        var request = new GetPreSignedUrlRequest
-        {
-            BucketName = _bucketName,
-            Key = file.FileName,
-            ContentType = file.ContentType,
-            Expires = DateTime.UtcNow.AddHours(1)
-        };
-        var preSignedUrl = _awsS3Client.GetPreSignedURL(request);
-
-        return preSignedUrl;
+        // conditions
+        // relate email to the user id
+        using var dbContext = new ApplicationDbContext();
+        return dbContext.SharedFiles!
+            .Where(file => file.RecipientEmail == loggedInUserEmail)
+            .ToList();
     }
 }
