@@ -18,6 +18,7 @@ public class TokenManager : ITokenManager
 
     public TokenManager(ApplicationDbContext applicationDbContext)
     {
+        // TODO: Inject a repository instead, this is a service layer component that should not touch DB context at all.
         _applicationDbContext = applicationDbContext;
         _tokenHandler = new JwtSecurityTokenHandler();
         _secretKey = Convert.FromBase64String(Convert.ToBase64String(Encoding.UTF8.GetBytes("rekfjdhabdjekkrnabrisnakelsntjsn")));
@@ -51,6 +52,7 @@ public class TokenManager : ITokenManager
         }
     }
 
+    // TODO: Move this method into a repository.
     private async Task<UserEntity?> GetUserByEmail(string email)
     {
         var user = await _applicationDbContext.AppUsers.FirstOrDefaultAsync(u => u.Email == email);

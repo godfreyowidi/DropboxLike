@@ -1,6 +1,8 @@
-﻿namespace DropboxLike.Domain.Repositories.Share;
+﻿using DropboxLike.Domain.Models;
+
+namespace DropboxLike.Domain.Repositories.Share;
 
 public interface IShareFileRepository
 {
-    Task<List<FileEntity>> GetSharedFilesByUserId(string userId);
+    Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId);
 }

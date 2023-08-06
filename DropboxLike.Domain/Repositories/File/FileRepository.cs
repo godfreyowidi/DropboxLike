@@ -158,17 +158,29 @@ public class FileRepository : IFileRepository
     }
   }
 
-  public async Task<OperationResult<List<FileEntity>>> ListFilesAsync()
+  public async Task<OperationResult<List<FileMetadata>>> ListFilesAsync()
   {
     try
     {
-      var files = await _applicationDbContext.FileModels!.ToListAsync();
-      return OperationResult<List<FileEntity>>.Success(files);
+      // TODO: Fix this implementation, it should take a user ID and ONLY RETURN FILES OWNED BY THAT USER.
+      var files = await _applicationDbContext
+        .FileModels!
+        .Select(file => new FileMetadata
+        {
+          FileKey = file.FileKey,
+          FileName = file.FileName,
+          FileSize = file.FileSize,
+          FilePath = file.FilePath,
+          ContentType = file.ContentType,
+          TimeStamp = file.TimeStamp
+        })
+        .ToListAsync();
+      return OperationResult<List<FileMetadata>>.Success(files);
     }
     catch (Exception exception)
     {
       var message = $"{HttpStatusCode.InternalServerError}: {exception.Message}";
-      return OperationResult<List<FileEntity>>.Fail(exception, message);
+      return OperationResult<List<FileMetadata>>.Fail(exception, message);
     }
   }
 

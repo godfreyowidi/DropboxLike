@@ -12,8 +12,8 @@ public class ShareFileService : IShareFileService
         _shareFileRepository = shareFileRepository;
     }
     
-    public Task<OperationResult<string>> ShareFileServiceAsync(FileEntity file)
+    public Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId)
     {
-        return _shareFileRepository.SharedFileWithEmail(file);
+        return _shareFileRepository.GetSharedFilesByUserId(userId);
     }
 }
