@@ -5,7 +5,7 @@ namespace DropboxLike.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ShareFileController : ControllerBase
+public class ShareFileController : BaseController
 {
     private readonly IShareFileService _shareFileService;
 
@@ -16,10 +16,11 @@ public class ShareFileController : ControllerBase
 
     [HttpGet]
     [Route("share")]
-    public async Task<IActionResult> ShareFileAsync(FileEntity file)
+    public async Task<IActionResult> GetSharedFilesByUserIdAsync()
     {
+        var userId = GetUserIdFromClaim();
 
-        var response = await _shareFileService.ShareFileServiceAsync(file);
+        var response = await _shareFileService.GetSharedFilesByUserId(userId);
 
         return Ok(response);
     }
