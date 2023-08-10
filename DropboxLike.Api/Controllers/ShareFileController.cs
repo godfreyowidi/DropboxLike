@@ -1,10 +1,12 @@
 ﻿using DropboxLike.Domain.Services.Share;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DropboxLike.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ShareFileController : BaseController
 {
     private readonly IShareFileService _shareFileService;

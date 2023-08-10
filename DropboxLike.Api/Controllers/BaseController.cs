@@ -7,7 +7,12 @@ public class BaseController : ControllerBase
 {
     protected string GetUserIdFromClaim()
     {
-        return HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        var signedInUser = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        if (signedInUser is null)
+            return "Please sign in to continue.";
+
+        return signedInUser;
     }
 
 }
