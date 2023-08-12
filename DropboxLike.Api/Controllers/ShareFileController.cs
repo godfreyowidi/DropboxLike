@@ -16,8 +16,17 @@ public class ShareFileController : BaseController
         _shareFileService = shareFileService;
     }
 
-    [HttpGet]
+    [HttpPost]
     [Route("share")]
+    public async Task<IActionResult> ShareFileWithUserAsync([FromForm] string userId, [FromForm] string fileKey)
+    {
+        var response = await _shareFileService.ShareFileWithUserAsync(userId, fileKey);
+
+        return Ok();
+    }
+
+    [HttpGet]
+    [Route("sharedfile")]
     public async Task<IActionResult> GetSharedFilesByUserIdAsync()
     {
         var userId = GetUserIdFromClaim();

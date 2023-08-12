@@ -58,9 +58,6 @@ public class FileRepository : IFileRepository
 
       await transferUtility.UploadAsync(uploadRequest);
       
-      // https://dropboxlike.s3.amazonaws.com/user_0e627459-e44a-4f34-b53a-487bbac27043/godfreyowidi_accessKeys.csv
-      // s3://dropboxlike/user_0e627459-e44a-4f34-b53a-487bbac27043/godfreyowidi_accessKeys.csv
-
       var fileModel = new FileEntity
       {
         FileKey = uploadRequest.Key,
@@ -72,7 +69,7 @@ public class FileRepository : IFileRepository
       };
 
       _applicationDbContext.FileModels?.Add(fileModel);
-      await _applicationDbContext.SaveChangesAsync();
+      await _applicationDbContext.SaveChangesAsync() ;
 
       return OperationResult<object>.Success(new object(), HttpStatusCode.Created);
     }
@@ -117,30 +114,27 @@ public class FileRepository : IFileRepository
 
       foreach (var obj in fileNames)
       {
-        if (file?.FileKey == obj)
+        if (file?.FileKey != obj) continue;
+        var downloadFileName = file.FileName;
+        var filePath = Path.Combine("/home/godfreyowidi/Downloads/DropboxLike", downloadFileName!);
+
+        var request = new GetObjectRequest
         {
-          var downloadFileName = file.FileName;
-          var filePath = Path.Combine("/home/godfreyowidi/Downloads/DropboxLike", downloadFileName!);
-
-          var request = new GetObjectRequest
+          BucketName = _bucketName,
+          Key = WebUtility.HtmlDecode(fileId).ToLowerInvariant()
+        };
+        using var response = await _awsS3Client.GetObjectAsync(request);
+        {
+          await using (var fileStream = new FileStream(filePath, FileMode.Create))
           {
-            BucketName = _bucketName,
-            Key = WebUtility.HtmlDecode(fileId).ToLowerInvariant()
-          };
-          using var response = await _awsS3Client.GetObjectAsync(request);
-          {
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-              await response.ResponseStream.CopyToAsync(fileStream);
-            }
-            var contentType = response.Headers.ContentType;
-            return OperationResult<Models.File>.Success(new Models.File
-            {
-              FileStream = response.ResponseStream,
-              ContentType = contentType
-            });
+            await response.ResponseStream.CopyToAsync(fileStream);
           }
+          var contentType = response.Headers.ContentType;
+          return OperationResult<Models.File>.Success(new Models.File
+          {
+            FileStream = response.ResponseStream,
+            ContentType = contentType
+          });
         }
       }
 

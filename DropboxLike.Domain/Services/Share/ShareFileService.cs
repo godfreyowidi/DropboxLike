@@ -16,4 +16,9 @@ public class ShareFileService : IShareFileService
     {
         return _shareFileRepository.GetSharedFilesByUserId(userId);
     }
+
+    public Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey)
+    {
+        return _shareFileRepository.ShareFileWithUserAsync(userId, fileKey);
+    }
 }
