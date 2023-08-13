@@ -22,7 +22,10 @@ public class ShareFileController : BaseController
     {
         var response = await _shareFileService.ShareFileWithUserAsync(userId, fileKey);
 
-        return Ok();
+        if (response.IsSuccessful) return Ok();
+        
+        var message = $"Failed to create shared file for user with ID {userId} and file with key {fileKey} due to '{response.FailureMessage ?? "<>"}'";
+        return StatusCode(response.StatusCode, message);
     }
 
     [HttpGet]
@@ -32,7 +35,11 @@ public class ShareFileController : BaseController
         var userId = GetUserIdFromClaim();
 
         var response = await _shareFileService.GetSharedFilesByUserId(userId);
+        
+        if (response.IsSuccessful) return Ok(response.Value);
+        
+        var message = $"Failed to get shared files for user with ID {userId} due to '{response.FailureMessage ?? "<>"}'";
+        return StatusCode(response.StatusCode, message);
 
-        return Ok(response);
     }
 }
