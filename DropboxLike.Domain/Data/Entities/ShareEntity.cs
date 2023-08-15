@@ -9,5 +9,13 @@ public class ShareEntity
     public string FileId { get; set; }
     public string SenderEmail { get; set; }
     public string RecipientEmail { get; set; }
-    public string AccessPermissions { get; set; }
+    public AccessPermission AccessPermissions { get; set; }
+}
+
+public enum AccessPermission
+{
+    None,
+    Read,
+    Write,
+    ReadWrite
 }

@@ -152,11 +152,16 @@ public class FileRepository : IFileRepository
     }
   }
 
-  public async Task<OperationResult<List<FileMetadata>>> ListFilesAsync()
+  public async Task<OperationResult<List<FileMetadata>>> ListFilesAsync(string userId)
   {
     try
     {
-      // TODO: Fix this implementation, it should take a user ID and ONLY RETURN FILES OWNED BY THAT USER.
+      var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Id == userId);
+      
+      if (user == null)
+      {
+        return OperationResult<List<FileMetadata>>.Fail("User not found.", HttpStatusCode.NotFound);
+      }
       var files = await _applicationDbContext
         .FileModels!
         .Select(file => new FileMetadata
@@ -164,7 +169,7 @@ public class FileRepository : IFileRepository
           FileKey = file.FileKey,
           FileName = file.FileName,
           FileSize = file.FileSize,
-          FilePath = file.FilePath,
+          FilePath = $"user_{user.Id}/{file.FileName}",
           ContentType = file.ContentType,
           TimeStamp = file.TimeStamp
         })

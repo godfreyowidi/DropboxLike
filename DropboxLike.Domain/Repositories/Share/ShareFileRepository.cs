@@ -14,7 +14,7 @@ public class ShareFileRepository : IShareFileRepository
         _applicationDbContext = applicationDbContext;
     }
 
-    public async Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey)
+    public async Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey, AccessPermission requiredPermission)
     {
         var sharedFile = new ShareEntity
         {
@@ -22,7 +22,7 @@ public class ShareFileRepository : IShareFileRepository
             FileId = fileKey,
             SenderEmail = "",
             RecipientEmail = "",
-            AccessPermissions = ""
+            AccessPermissions = requiredPermission
         };
         await _applicationDbContext.SharedFiles!.AddAsync(sharedFile);
         await _applicationDbContext.SaveChangesAsync();
@@ -30,10 +30,10 @@ public class ShareFileRepository : IShareFileRepository
         return OperationResult<string>.Success("File share successfully");
     }
 
-    public async Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId)
+    public async Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId, AccessPermission requiredPermission)
     {
         var sharedFiles = await _applicationDbContext.SharedFiles!
-            .Where(file => file.UserId == userId)
+            .Where(file => file.UserId == userId && file.AccessPermissions == requiredPermission)
             .Join(
                 _applicationDbContext.FileModels!,
                 sharedFile => sharedFile.FileId,

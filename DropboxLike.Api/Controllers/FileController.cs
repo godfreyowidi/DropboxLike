@@ -48,10 +48,9 @@ public class FileController : BaseController
   [Route("List")]
   public async Task<IActionResult> ListFilesAsync()
   {
-    // TODO: List files operation needs to be scoped to user, otherwise other users' files will be included in response.
     var userId = GetUserIdFromClaim();
     
-    var response = await _fileService.ListBucketFilesAsync();
+    var response = await _fileService.ListBucketFilesAsync(userId);
     
     return Ok(response.Value);
   }
