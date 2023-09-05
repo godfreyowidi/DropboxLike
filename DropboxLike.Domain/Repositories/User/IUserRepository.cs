@@ -6,4 +6,5 @@ namespace DropboxLike.Domain.Repositories.User;
 public interface IUserRepository
 {
     Task<OperationResult<string>> RegisterUserAsync(string email, string password);
+    Task<OperationResult<string>> GetUserIdByEmailAddressAsync(string email);
 }

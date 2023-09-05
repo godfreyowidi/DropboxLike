@@ -5,7 +5,7 @@ namespace DropboxLike.Domain.Repositories.Share;
 
 public interface IShareFileRepository
 {
-    Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId, AccessPermission requiredPermission);
-    Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey, AccessPermission requiredPermission);
+    Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId);
+    Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey);
 
 }

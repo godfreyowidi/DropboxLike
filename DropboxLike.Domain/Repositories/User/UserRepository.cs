@@ -20,7 +20,7 @@ public class UserRepository : IUserRepository
     private readonly string? _bucketName;
 
 
-    public UserRepository(ApplicationDbContext applicationDbContext, IOptions<AwsConfiguration> options)
+    public UserRepository(IOptions<AwsConfiguration> options, ApplicationDbContext applicationDbContext)
     {
         var configuration = options.Value;
         _applicationDbContext = applicationDbContext;
@@ -74,6 +74,25 @@ public class UserRepository : IUserRepository
 
     }
 
+    public async Task<OperationResult<string>> GetUserIdByEmailAddressAsync(string email)
+    {
+        try
+        {
+            var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user != null)
+            {
+                return OperationResult<string>.Success(user.Id!);
+            }
+           
+            return OperationResult<string>.Fail("User not found for the provided email address.");
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<string>.Fail("An error occurred while retrieving the user ID.");
+        }
+    }
+    
     private async Task CreateS3BucketFolder(string userId)
     {
         var request = new PutObjectRequest

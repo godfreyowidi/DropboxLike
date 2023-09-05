@@ -13,13 +13,13 @@ public class ShareFileService : IShareFileService
         _shareFileRepository = shareFileRepository;
     }
     
-    public Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId, AccessPermission requiredPermission)
+    public Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId)
     {
-        return _shareFileRepository.GetSharedFilesByUserId(userId, requiredPermission);
+        return _shareFileRepository.GetSharedFilesByUserId(userId);
     }
 
-    public Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey, AccessPermission requiredPermission)
+    public Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey)
     {
-        return _shareFileRepository.ShareFileWithUserAsync(userId, fileKey, requiredPermission);
+        return _shareFileRepository.ShareFileWithUserAsync(userId, fileKey);
     }
 }

@@ -17,4 +17,9 @@ public class UserService : IUserService
     {
         return await _userRepository.RegisterUserAsync(email, password);
     }
+
+    public async Task<OperationResult<string>> GetUserIdByEmailAddressAsync(string email)
+    {
+        return await _userRepository.GetUserIdByEmailAddressAsync(email);
+    }
 }
