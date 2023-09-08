@@ -1,4 +1,5 @@
 using DropboxLike.Domain.Data.Entities;
+using DropboxLike.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DropboxLike.Domain.Data;
@@ -18,7 +19,14 @@ public class ApplicationDbContext : DbContext
     modelBuilder.Entity<UserEntity>()
       .HasIndex(u => u.Email)
       .IsUnique();
-
+    
+    modelBuilder.Entity<ShareEntity>()
+      .HasKey(s => s.ShareId);
+    
+    modelBuilder.Entity<ShareEntity>()
+      .HasIndex(k => new { k.UserId, k.FileId })
+      .IsUnique();
+    
     base.OnModelCreating(modelBuilder);
   }
 }

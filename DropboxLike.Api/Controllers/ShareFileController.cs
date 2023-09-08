@@ -53,22 +53,20 @@ public class ShareFileController : BaseController
     [Route("shareByEmail")]
     public async Task<IActionResult> ShareWithUserByEmailAsync([FromBody] Share model)
     {
-        var result = await _userService.GetUserIdByEmailAddressAsync(model.Email);
+        List<string> emails = model.Email.Split(',').Select(e => e.Trim()).ToList();
+        List<string> validUserIds = await _userService.GetUserIdByEmailAddressAsync(emails);
 
-        if (!result.IsSuccessful)
+        if (validUserIds.Any())
         {
-            return BadRequest("User with that email is not a registered user.");
+            foreach (var userId in validUserIds)
+            {
+                var shareResult = await _shareFileService.ShareFileWithUserAsync(userId, model.FileId);
+                if (!shareResult.IsSuccessful)
+                {
+                    return BadRequest("An error occurred while sharing the file. Try again later.");
+                }
+            }
         }
-
-        var userId = result.Value;
-
-        var shareResult = await _shareFileService.ShareFileWithUserAsync(userId, model.FileId);
-
-        if (shareResult.IsSuccessful)
-        {
-            return Ok("File Share Successfully.");
-        }
-
-        return BadRequest("An error occurred while sharing the file. Try again later.");
+        return Ok("File Share Successfully.");
     }
 }
