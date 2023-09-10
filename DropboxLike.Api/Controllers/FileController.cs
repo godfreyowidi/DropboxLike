@@ -50,9 +50,9 @@ public class FileController : BaseController
   {
     var userId = GetUserIdFromClaim();
     
-    var response = await _fileService.ListBucketFilesAsync();
+    var response = await _fileService.ListBucketFilesAsync(userId);
     
-    return Ok(response);
+    return Ok(response.Value);
   }
 
   [HttpDelete]

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -20,7 +21,7 @@ public class UserRepository : IUserRepository
     private readonly string? _bucketName;
 
 
-    public UserRepository(ApplicationDbContext applicationDbContext, IOptions<AwsConfiguration> options)
+    public UserRepository(IOptions<AwsConfiguration> options, ApplicationDbContext applicationDbContext)
     {
         var configuration = options.Value;
         _applicationDbContext = applicationDbContext;
@@ -74,6 +75,68 @@ public class UserRepository : IUserRepository
 
     }
 
+    public async Task<List<string>> GetUserIdByEmailAddressAsync(List<string> emails)
+    {
+        var validUserIds = new List<string>();
+        var invalidEmails = new List<string>();
+        var unregisteredEmails = new List<string>();
+
+        foreach (var email in emails)
+        {
+            if (!IsEmailValid(email))
+            {
+                invalidEmails.Add(email);
+                continue;
+            }
+
+            var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user != null)
+            {
+                validUserIds.Add((user.Id!));
+            }
+            else
+            {
+                unregisteredEmails.Add(email);
+            }
+
+        }
+        
+        List<string> errorMessages = new List<string>();
+
+        if (invalidEmails.Any() && unregisteredEmails.Any())
+        {
+            errorMessages.Add( $"{string.Join(", ", invalidEmails)} not a valid email, " +
+                   $"{string.Join(", ", unregisteredEmails)} not a registered user");
+        }
+        
+        if (invalidEmails.Any())
+        {
+            errorMessages.Add( $"{string.Join(", ", invalidEmails)} not a valid email.");
+        }
+        
+        if (unregisteredEmails.Any())
+        {
+            errorMessages.Add($"{string.Join(", ", unregisteredEmails)} not a registered user");
+        }
+
+        if (errorMessages.Any())
+        {
+            return errorMessages;
+        }
+
+        return validUserIds;
+    }
+
+    private bool IsEmailValid(string email)
+    {
+        string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+
+        bool isValid = Regex.IsMatch(email, pattern);
+
+        return isValid;
+    }
+    
     private async Task CreateS3BucketFolder(string userId)
     {
         var request = new PutObjectRequest
