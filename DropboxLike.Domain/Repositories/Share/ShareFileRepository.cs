@@ -16,6 +16,14 @@ public class ShareFileRepository : IShareFileRepository
 
     public async Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey)
     {
+        var existingSharedFile = await _applicationDbContext.SharedFiles!
+            .FirstOrDefaultAsync(sf => sf.UserId == userId && sf.FileId == fileKey);
+
+        if (existingSharedFile != null)
+        {
+            return OperationResult<string>.Fail("File is already shared with the user.");
+        }
+        
         var sharedFile = new ShareEntity
         {
             UserId = userId,
