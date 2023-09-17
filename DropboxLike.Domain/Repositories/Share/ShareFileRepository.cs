@@ -1,4 +1,6 @@
-﻿using DropboxLike.Domain.Data;
+﻿using System.Net;
+using Azure;
+using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Data.Entities;
 using DropboxLike.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,25 +16,34 @@ public class ShareFileRepository : IShareFileRepository
         _applicationDbContext = applicationDbContext;
     }
 
-    public async Task<OperationResult<string>> ShareFileWithUserAsync(string userId, string fileKey)
+    public async Task<OperationResult<string>> ShareFileWithUsersAsync(IEnumerable<string> userIds, string fileId)
     {
-        var existingSharedFile = await _applicationDbContext.SharedFiles!
-            .FirstOrDefaultAsync(sf => sf.UserId == userId && sf.FileId == fileKey);
-
-        if (existingSharedFile != null)
+        try
         {
-            return OperationResult<string>.Fail("File is already shared with the user.");
+            foreach (var userId in userIds)
+            {
+                var existingSharedFile = await _applicationDbContext.SharedFiles!
+                    .FirstOrDefaultAsync(sf => sf.UserId == userId && sf.FileId == fileId);
+
+                if (existingSharedFile != null)
+                {
+                    return OperationResult<string>.Fail("File is already shared with the user.", HttpStatusCode.Conflict);
+                }
+
+                var sharedFile = new ShareEntity
+                {
+                    UserId = userId,
+                    FileId = fileId,
+                };
+                _applicationDbContext.SharedFiles!.Add(sharedFile);
+            }
+            await _applicationDbContext.SaveChangesAsync();
+            return OperationResult<string>.Success("File share successfully.");
         }
-        
-        var sharedFile = new ShareEntity
+        catch (Exception)
         {
-            UserId = userId,
-            FileId = fileKey,
-        };
-        await _applicationDbContext.SharedFiles!.AddAsync(sharedFile);
-        await _applicationDbContext.SaveChangesAsync();
-
-        return OperationResult<string>.Success("File share successfully");
+            return OperationResult<string>.Fail("An error occurred while sharing the file with a user. Try again later.", HttpStatusCode.InternalServerError);
+        }
     }
 
     public async Task<OperationResult<List<FileMetadata>>> GetSharedFilesByUserId(string userId)

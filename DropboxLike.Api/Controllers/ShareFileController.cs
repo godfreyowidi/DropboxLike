@@ -21,10 +21,11 @@ public class ShareFileController : BaseController
     }
 
     [HttpPost]
-    [Route("share")]
+    [Route("share/multiple")]
     public async Task<IActionResult> ShareFileWithUserAsync([FromForm] string userId, [FromForm] string fileKey)
     {
-        var response = await _shareFileService.ShareFileWithUserAsync(userId, fileKey);
+        var userIds = new List<string> { userId };
+        var response = await _shareFileService.ShareFileWithUsersAsync(userIds, fileKey);
 
         if (response.IsSuccessful) return Ok();
 
@@ -34,7 +35,7 @@ public class ShareFileController : BaseController
     }
 
     [HttpGet]
-    [Route("sharedfile")]
+    [Route("share/single")]
     public async Task<IActionResult> GetSharedFilesByUserIdAsync()
     {
         var userId = GetUserIdFromClaim();
@@ -55,23 +56,8 @@ public class ShareFileController : BaseController
     {
         var emails = model.Email.Split(',').Select(e => e.Trim()).ToList();
         var validUserIds = await _userService.GetUserIdByEmailAddressAsync(emails);
-
-        if (validUserIds.Any())
-        {
-            foreach (var userId in validUserIds)
-            {
-                var shareResult = await _shareFileService.ShareFileWithUserAsync(userId, model.FileId);
-                if (!shareResult.IsSuccessful)
-                {
-                    if (shareResult.FailureMessage == "File is already shared with the user.")
-                    {
-                        return BadRequest("File is already shared with one or more users.");
-                    }
-                    
-                    return BadRequest("An error occurred while sharing the file with a user. Try again later.");
-                }
-            }
-        }
-        return Ok("File Share Successfully.");
+        
+        var shareResult = await _shareFileService.ShareFileWithUsersAsync(validUserIds, model.FileId);
+        return new StatusCodeResult(shareResult.StatusCode);
     }
 }
