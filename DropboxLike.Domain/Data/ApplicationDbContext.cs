@@ -16,17 +16,28 @@ public class ApplicationDbContext : DbContext
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
+    // One method per entity/collection/table.
+    ConfigureUserEntity(modelBuilder);
+    ConfigureShareEntity(modelBuilder);
+    
+    base.OnModelCreating(modelBuilder);
+  }
+
+  private static void ConfigureUserEntity(ModelBuilder modelBuilder)
+  {
     modelBuilder.Entity<UserEntity>()
       .HasIndex(u => u.Email)
       .IsUnique();
-    
+  }
+
+  private static void ConfigureShareEntity(ModelBuilder modelBuilder)
+  {
     modelBuilder.Entity<ShareEntity>()
-      .HasKey(s => s.ShareId);
-    
+      .HasKey(share=> new { share.UserId, share.FileId });
+
     modelBuilder.Entity<ShareEntity>()
-      .HasIndex(k => new { k.UserId, k.FileId })
-      .IsUnique();
-    
-    base.OnModelCreating(modelBuilder);
+      .HasOne<UserEntity>(share => share.User)
+      .WithMany(user => user.FileShares)
+      .OnDelete(DeleteBehavior.Cascade);
   }
 }
