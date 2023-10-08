@@ -7,7 +7,7 @@ public class UserEntity
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string Id { get; set;  }
+    public Guid Id { get; set; }
 
     [Required]
     [MaxLength(30)]

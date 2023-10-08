@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     // One method per entity/collection/table.
     ConfigureUserEntity(modelBuilder);
     ConfigureShareEntity(modelBuilder);
+    ConfigureFileEntity(modelBuilder);
     
     base.OnModelCreating(modelBuilder);
   }
@@ -38,6 +39,24 @@ public class ApplicationDbContext : DbContext
     modelBuilder.Entity<ShareEntity>()
       .HasOne<UserEntity>(share => share.User)
       .WithMany(user => user.FileShares)
+      .OnDelete(DeleteBehavior.Cascade);
+  }
+
+  private static void ConfigureFileEntity(ModelBuilder modelBuilder)
+  {
+    modelBuilder.Entity<FileEntity>()
+      .HasIndex(f => new { f.FileName })
+      .IsUnique();
+
+    modelBuilder.Entity<FileEntity>()
+      .HasMany(f => f.SharedWithUsers)
+      .WithOne(s => s.File)
+      .HasForeignKey(s => s.FileId);
+
+    modelBuilder.Entity<FileEntity>()
+      .HasMany(fr => fr.SharedWithUsers)
+      .WithOne(sf => sf.File)
+      .HasForeignKey(sf => sf.FileId)
       .OnDelete(DeleteBehavior.Cascade);
   }
 }

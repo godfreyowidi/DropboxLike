@@ -7,6 +7,7 @@ using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
+using DropboxLike.Domain.Data.Entities;
 using DropboxLike.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

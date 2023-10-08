@@ -1,7 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using DropboxLike.Domain.Models;
-
+﻿
 namespace DropboxLike.Domain.Data.Entities;
 
 public class ShareEntity
@@ -10,4 +7,5 @@ public class ShareEntity
     public string FileId { get; set; }
 
     public UserEntity User { get; set; } = null!;
+    public FileEntity File { get; set; } = null!;
 }
