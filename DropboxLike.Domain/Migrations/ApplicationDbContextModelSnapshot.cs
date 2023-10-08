@@ -21,26 +21,46 @@ namespace DropboxLike.Domain.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DropboxLike.Domain.Data.Entities.FileEntity", b =>
+                {
+                    b.Property<string>("FileKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileSize")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TimeStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("FileKey");
+
+                    b.HasIndex("FileName")
+                        .IsUnique();
+
+                    b.ToTable("FileModels");
+                });
+
             modelBuilder.Entity("DropboxLike.Domain.Data.Entities.ShareEntity", b =>
                 {
-                    b.Property<int>("ShareId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShareId"));
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FileId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.HasKey("UserId", "FileId");
 
-                    b.HasKey("ShareId");
-
-                    b.HasIndex("UserId", "FileId")
-                        .IsUnique();
+                    b.HasIndex("FileId");
 
                     b.ToTable("SharedFiles");
                 });
@@ -68,40 +88,33 @@ namespace DropboxLike.Domain.Migrations
                     b.ToTable("AppUsers");
                 });
 
-            modelBuilder.Entity("FileEntity", b =>
-                {
-                    b.Property<string>("FileKey")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ContentType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileSize")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TimeStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("FileKey");
-
-                    b.ToTable("FileModels");
-                });
-
             modelBuilder.Entity("DropboxLike.Domain.Data.Entities.ShareEntity", b =>
                 {
+                    b.HasOne("DropboxLike.Domain.Data.Entities.FileEntity", "File")
+                        .WithMany("SharedWithUsers")
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("DropboxLike.Domain.Data.Entities.UserEntity", "User")
-                        .WithMany()
+                        .WithMany("FileShares")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("File");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DropboxLike.Domain.Data.Entities.FileEntity", b =>
+                {
+                    b.Navigation("SharedWithUsers");
+                });
+
+            modelBuilder.Entity("DropboxLike.Domain.Data.Entities.UserEntity", b =>
+                {
+                    b.Navigation("FileShares");
                 });
 #pragma warning restore 612, 618
         }
