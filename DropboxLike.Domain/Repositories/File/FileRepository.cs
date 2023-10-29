@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -9,6 +10,7 @@ using DropboxLike.Domain.Configuration;
 using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Data.Entities;
 using DropboxLike.Domain.Models;
+using DropboxLike.Domain.Models.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -61,7 +63,7 @@ public class FileRepository : IFileRepository
       
       var fileModel = new FileEntity
       {
-        FileKey = uploadRequest.Key,
+        FileKey = WebUtility.UrlEncode(uploadRequest.Key),
         FileName = file.FileName,
         FilePath = filePath,
         FileSize = file.Length.ToString(),
@@ -86,73 +88,159 @@ public class FileRepository : IFileRepository
     }
   }
 
-  public async Task<OperationResult<Models.File>> DownloadFileAsync(string fileId)
+  public async Task<OperationResult<Models.File>> DownloadFileAsync(string fileId, string userId)
+{
+    try
+    {
+        var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return OperationResult<Models.File>.Fail("User not found.", HttpStatusCode.NotFound);
+        }
+
+        var file = await _applicationDbContext.FileModels!.FindAsync(fileId);
+        if (file == null || !file.FilePath!.StartsWith($"user_{user.Id}"))
+        {
+            return OperationResult<Models.File>.Fail($"{HttpStatusCode.NotFound}: File not found or not related to user.", HttpStatusCode.NotFound);
+        }
+
+        var listRequest = new ListObjectsV2Request
+        {
+            BucketName = _bucketName,
+        };
+
+        var fileNames = new List<string>();
+
+        ListObjectsV2Response listResponse;
+        do
+        {
+            listResponse = await _awsS3Client.ListObjectsV2Async(listRequest);
+
+            fileNames.AddRange(listResponse.S3Objects.Select(obj => obj.Key));
+
+            listRequest.ContinuationToken = listResponse.NextContinuationToken;
+        } while (listResponse.IsTruncated);
+
+        foreach (var obj in fileNames)
+        {
+            if (file?.FileKey != WebUtility.UrlEncode(obj)) continue;
+            var downloadFileName = file.FileName;
+            var filePath = Path.Combine(@"C:\Users\godfr\Downloads", downloadFileName!);
+
+            var request = new GetObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = WebUtility.UrlDecode(fileId)
+            };
+            using var response = await _awsS3Client.GetObjectAsync(request);
+            {
+                await using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await response.ResponseStream.CopyToAsync(fileStream);
+                }
+                var contentType = response.Headers.ContentType;
+                return OperationResult<Models.File>.Success(new Models.File
+                {
+                    FileStream = response.ResponseStream,
+                    ContentType = contentType
+                });
+            }
+        }
+
+        return OperationResult<Models.File>.Fail($"{HttpStatusCode.NotFound}: File not found.", HttpStatusCode.NotFound);
+    }
+    catch (AmazonS3Exception exception)
+    {
+        var message = $"{exception.StatusCode}: {exception.Message}";
+        return OperationResult<Models.File>.Fail(exception, message, exception.StatusCode);
+    }
+    catch (Exception exception)
+    {
+        var message = $"{HttpStatusCode.InternalServerError}: {exception.Message}";
+        return OperationResult<Models.File>.Fail(exception, message);
+    }
+}
+    
+  public async Task<OperationResult<FileView>> ViewFileAsync(string fileId, string userId)
   {
     try
     {
       var file = await _applicationDbContext.FileModels!.FindAsync(fileId);
+      
       if (file == null)
       {
         throw new FileNotFoundException("File not Found");
       }
-
-      var listRequest = new ListObjectsV2Request
+      
+      var extractedUserId = fileId.Split('%')[0].Split('_')[1];
+      var isOwner = extractedUserId == userId;
+      
+      bool isShared = await _applicationDbContext.SharedFiles!.AnyAsync(s => s.FileId == fileId && s.UserId == userId);
+      
+      if (!isOwner && !isShared)
       {
-        BucketName = _bucketName,
-      };
-
-      var fileNames = new List<string>();
-
-      ListObjectsV2Response listResponse;
-      do
-      {
-        listResponse = await _awsS3Client.ListObjectsV2Async(listRequest);
-
-        fileNames.AddRange(listResponse.S3Objects.Select(obj => obj.Key));
-
-        listRequest.ContinuationToken = listResponse.NextContinuationToken;
-      } while (listResponse.IsTruncated);
-
-      foreach (var obj in fileNames)
-      {
-        if (file?.FileKey != obj) continue;
-        var downloadFileName = file.FileName;
-        var filePath = Path.Combine("/home/godfreyowidi/Downloads/DropboxLike", downloadFileName!);
-
-        var request = new GetObjectRequest
-        {
-          BucketName = _bucketName,
-          Key = WebUtility.HtmlDecode(fileId).ToLowerInvariant()
-        };
-        using var response = await _awsS3Client.GetObjectAsync(request);
-        {
-          await using (var fileStream = new FileStream(filePath, FileMode.Create))
-          {
-            await response.ResponseStream.CopyToAsync(fileStream);
-          }
-          var contentType = response.Headers.ContentType;
-          return OperationResult<Models.File>.Success(new Models.File
-          {
-            FileStream = response.ResponseStream,
-            ContentType = contentType
-          });
-        }
+        throw new UnauthorizedAccessException("You do not have permission to view this file.");
       }
 
-      return OperationResult<Models.File>.Fail($"{HttpStatusCode.NotFound}: File not found.", HttpStatusCode.NotFound);
+      var request = new GetObjectRequest
+      {
+        BucketName = _bucketName,
+        Key = WebUtility.UrlDecode(fileId)
+      };
+
+      using var response = await _awsS3Client.GetObjectAsync(request);
+      var contentType = response.Headers.ContentType;
+
+      using var memoryStream = new MemoryStream();
+      await response.ResponseStream.CopyToAsync(memoryStream);
+      var contentAsBytes = memoryStream.ToArray();
+
+      string content;
+      bool isBase64;
+
+      if (IsTextBasedContent(contentType))
+      {
+        content = Encoding.UTF8.GetString(contentAsBytes);
+        isBase64 = false;
+      }
+      else
+      {
+        content = Convert.ToBase64String(contentAsBytes);
+        isBase64 = true;
+      }
+
+      return OperationResult<FileView>.Success(new FileView
+      {
+        Content = content,
+        ContentType = contentType,
+        IsBase64Encoded = isBase64
+      });
     }
     catch (AmazonS3Exception exception)
     {
       var message = $"{exception.StatusCode}: {exception.Message}";
-      return OperationResult<Models.File>.Fail(exception, message, exception.StatusCode);
+      return OperationResult<FileView>.Fail(exception, message, exception.StatusCode);
     }
     catch (Exception exception)
     {
       var message = $"{HttpStatusCode.InternalServerError}: {exception.Message}";
-      return OperationResult<Models.File>.Fail(exception, message);
+      return OperationResult<FileView>.Fail(exception, message);
     }
   }
+  private bool IsTextBasedContent(string contentType)
+  {
+    var textBasedContentTypes = new List<string>
+    {
+      "text/plain",
+      "text/csv",
+      "text/html",
+      "application/json",
+      "application/xml"
+    };
 
+    return textBasedContentTypes.Contains(contentType);
+  }
+    
   public async Task<OperationResult<List<FileMetadata>>> ListFilesAsync(string userId)
   {
     try
