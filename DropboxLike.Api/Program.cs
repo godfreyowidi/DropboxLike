@@ -35,6 +35,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         );
     }));
 
+builder.Services.AddSignalRCore();
+
 // 2. Add lowest layer components, namely repositories.
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();

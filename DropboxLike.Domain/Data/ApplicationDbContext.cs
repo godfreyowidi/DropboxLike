@@ -13,15 +13,30 @@ public class ApplicationDbContext : DbContext
   public DbSet<FileEntity>? FileModels { get; set; }
   public DbSet<UserEntity>? AppUsers { get; set;  }
   public DbSet<ShareEntity>? SharedFiles { get; set; }
-
+  
+  public DbSet<FolderEntity>? Folders { get; set; }
+  public DbSet<ShareFolder>? ShareFolders { get; set; }
+  public DbSet<FileFolder>? FileFolders { get; set; }
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
-    // One method per entity/collection/table.
     ConfigureUserEntity(modelBuilder);
     ConfigureShareEntity(modelBuilder);
     ConfigureFileEntity(modelBuilder);
     
     base.OnModelCreating(modelBuilder);
+    
+    modelBuilder.Entity<FileFolder>()
+      .HasKey(ff => new { ff.FileId, ff.FolderId });
+
+    modelBuilder.Entity<FileFolder>()
+      .HasOne(ff => ff.File)
+      .WithMany(f => f.FileFolders)
+      .HasForeignKey(ff => ff.FileId);
+
+    modelBuilder.Entity<FileFolder>()
+      .HasOne(ff => ff.Folder)
+      .WithMany(f => f.FileFolders)
+      .HasForeignKey(ff => ff.FolderId);
   }
 
   private static void ConfigureUserEntity(ModelBuilder modelBuilder)
@@ -41,6 +56,18 @@ public class ApplicationDbContext : DbContext
       .WithMany(user => user.FileShares)
       .OnDelete(DeleteBehavior.Cascade);
   }
+  
+  private static void ConfigureShareFolder(ModelBuilder modelBuilder)
+  {
+    modelBuilder.Entity<ShareFolder>()
+      .HasKey(share=> new { share.UserId, share.FolderId });
+
+    modelBuilder.Entity<ShareFolder>()
+      .HasOne<UserEntity>(share => share.User)
+      .WithMany(user => user.FolderShares)
+      .OnDelete(DeleteBehavior.Cascade);
+  }
+
 
   private static void ConfigureFileEntity(ModelBuilder modelBuilder)
   {
@@ -60,3 +87,4 @@ public class ApplicationDbContext : DbContext
       .OnDelete(DeleteBehavior.Cascade);
   }
 }
+

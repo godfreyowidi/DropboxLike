@@ -14,4 +14,5 @@ public class FileEntity
   public string? TimeStamp { get; set; }
 
   public IEnumerable<ShareEntity> SharedWithUsers { get; set; } = null!;
+  public ICollection<FileFolder> FileFolders { get; set; } = new List<FileFolder>();
 }

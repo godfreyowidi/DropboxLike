@@ -18,4 +18,5 @@ public class UserEntity
     public string Password { get; set; } = string.Empty;
 
     public IEnumerable<ShareEntity> FileShares { get; set; } = null!;
+    public IEnumerable<ShareFolder> FolderShares { get; set; } = null!;
 }
