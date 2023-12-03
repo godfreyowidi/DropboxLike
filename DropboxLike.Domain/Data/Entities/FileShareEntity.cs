@@ -1,7 +1,7 @@
 ﻿
 namespace DropboxLike.Domain.Data.Entities;
 
-public class ShareEntity
+public class FileShareEntity
 {
     public string UserId { get; set; }
     public string FileId { get; set; }

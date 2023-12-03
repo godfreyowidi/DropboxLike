@@ -13,6 +13,6 @@ public class FileEntity
   public string? ContentType { get; set; }
   public string? TimeStamp { get; set; }
 
-  public IEnumerable<ShareEntity> SharedWithUsers { get; set; } = null!;
-  public ICollection<FileFolder> FileFolders { get; set; } = new List<FileFolder>();
+  public FolderEntity Folder { get; set; } = null!;
+  public IEnumerable<FileShareEntity> Shares { get; set; } = new List<FileShareEntity>();
 }

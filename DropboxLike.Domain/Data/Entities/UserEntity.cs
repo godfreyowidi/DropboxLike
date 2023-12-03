@@ -17,6 +17,7 @@ public class UserEntity
     [Required]
     public string Password { get; set; } = string.Empty;
 
-    public IEnumerable<ShareEntity> FileShares { get; set; } = null!;
-    public IEnumerable<ShareFolder> FolderShares { get; set; } = null!;
+    public FolderEntity RootFolder { get; set; } = null!;
+    public IEnumerable<FileShareEntity> FileShares { get; set; } = null!;
+    public IEnumerable<FolderShareEntity> FolderShares { get; set; } = null!;
 }

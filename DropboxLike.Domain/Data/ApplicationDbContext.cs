@@ -12,7 +12,7 @@ public class ApplicationDbContext : DbContext
     
   public DbSet<FileEntity>? FileModels { get; set; }
   public DbSet<UserEntity>? AppUsers { get; set;  }
-  public DbSet<ShareEntity>? SharedFiles { get; set; }
+  public DbSet<FileShareEntity>? SharedFiles { get; set; }
   
   public DbSet<FolderEntity>? Folders { get; set; }
   public DbSet<ShareFolder>? ShareFolders { get; set; }
@@ -48,10 +48,10 @@ public class ApplicationDbContext : DbContext
 
   private static void ConfigureShareEntity(ModelBuilder modelBuilder)
   {
-    modelBuilder.Entity<ShareEntity>()
+    modelBuilder.Entity<FileShareEntity>()
       .HasKey(share=> new { share.UserId, share.FileId });
 
-    modelBuilder.Entity<ShareEntity>()
+    modelBuilder.Entity<FileShareEntity>()
       .HasOne<UserEntity>(share => share.User)
       .WithMany(user => user.FileShares)
       .OnDelete(DeleteBehavior.Cascade);
@@ -76,12 +76,12 @@ public class ApplicationDbContext : DbContext
       .IsUnique();
 
     modelBuilder.Entity<FileEntity>()
-      .HasMany(f => f.SharedWithUsers)
+      .HasMany(f => f.Shares)
       .WithOne(s => s.File)
       .HasForeignKey(s => s.FileId);
 
     modelBuilder.Entity<FileEntity>()
-      .HasMany(fr => fr.SharedWithUsers)
+      .HasMany(fr => fr.Shares)
       .WithOne(sf => sf.File)
       .HasForeignKey(sf => sf.FileId)
       .OnDelete(DeleteBehavior.Cascade);
