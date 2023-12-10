@@ -30,7 +30,7 @@ public class ShareFileRepository : IShareFileRepository
                     return OperationResult<string>.Fail("File is already shared with the user.", HttpStatusCode.Conflict);
                 }
 
-                var sharedFile = new ShareEntity
+                var sharedFile = new ShareFile
                 {
                     UserId = userId,
                     FileId = fileId,

@@ -16,36 +16,63 @@ public class ShareFolderRepository : IShareFolderRespository
         _applicationDbContext = applicationDbContext;
     }
 
-    public async Task<OperationResult<string>> ShareFolderWithUserAsync(IEnumerable<string> userIds, string folderId)
+   public async Task<OperationResult<string>> ShareFolderWithUserAsync(string folderId, string userId, string shareWithUserId)
     {
         try
         {
-            foreach (var userId in userIds)
+            var existingSharedFolder = await _applicationDbContext.SharedFolders!
+                .FirstOrDefaultAsync(sf => sf.UserId == shareWithUserId && sf.FolderId == folderId);
+
+            if (existingSharedFolder != null)
             {
-                var existingSharedFolder =
-                    await _applicationDbContext.ShareFolders.FirstOrDefaultAsync(sf =>
-                        sf.UserId == userId && sf.FolderId == folderId);
-
-                if (existingSharedFolder != null)
-                {
-                    continue;
-                }
-
-                var sharedFolder = new ShareFolder()
-                {
-                    UserId = userId,
-                    FolderId = folderId,
-                };
-                _applicationDbContext.ShareFolders.Add(sharedFolder);
+                return OperationResult<string>.Fail("Folder is already shared with the user.", HttpStatusCode.Conflict);
             }
 
+            var shareFolder = new ShareFolder
+            {
+                FolderId = folderId,
+                UserId = shareWithUserId
+            };
+
+            _applicationDbContext.SharedFolders!.Add(shareFolder);
             await _applicationDbContext.SaveChangesAsync();
+
             return OperationResult<string>.Success("Folder shared successfully.");
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            return OperationResult<string>.Fail("Error occurred while sharing the folder. ",
-                HttpStatusCode.InternalServerError);
+            return OperationResult<string>.Fail("An error occurred while sharing the folder. Try again later.", HttpStatusCode.InternalServerError);
+        }
+    }
+
+    public async Task<OperationResult<bool>> UnshareFolderWithUserAsync(string folderId, string userId, string unshareWithUserId)
+    {
+        try
+        {
+            var folder = await _applicationDbContext.Folders!
+                .FirstOrDefaultAsync(f => f.FolderId == folderId && f.UserId == userId);
+
+            if (folder == null)
+            {
+                return OperationResult<bool>.Fail("Folder not found or user lacks permission to unshare it.", HttpStatusCode.Unauthorized);
+            }
+
+            var shareFolder = await _applicationDbContext.SharedFolders!
+                .FirstOrDefaultAsync(sf => sf.FolderId == folderId && sf.UserId == unshareWithUserId);
+
+            if (shareFolder == null)
+            {
+                return OperationResult<bool>.Fail("Shared folder entry not found.", HttpStatusCode.NotFound);
+            }
+
+            _applicationDbContext.SharedFolders!.Remove(shareFolder);
+            await _applicationDbContext.SaveChangesAsync();
+
+            return OperationResult<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<bool>.Fail($"An error occurred: {ex.Message}", HttpStatusCode.InternalServerError);
         }
     }
     

@@ -59,13 +59,15 @@ public class UserRepository : IUserRepository
             {
                 await CreateS3BucketFolder(newUser.Id!.ToString());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _applicationDbContext.AppUsers?.Remove(newUser);
                 await _applicationDbContext.SaveChangesAsync();
-
-                throw ex;
+                throw;
             }
+
+            return OperationResult<string>.Success(newUser.Id!.ToString(), HttpStatusCode.Created);
+
             return OperationResult<string>.Success(newUser.Id!.ToString(), HttpStatusCode.Created);
         }
         catch (Exception ex)
