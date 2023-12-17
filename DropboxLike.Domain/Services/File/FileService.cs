@@ -13,9 +13,9 @@ public class FileService : IFileService
     _fileRepository = fileRepository;
   }
 
-    public async Task<OperationResult<object>> UploadSingleFileAsync(IFormFile file, string userId)
+    public async Task<OperationResult<object>> UploadSingleFileAsync(IFormFile file, string userId, string? folderId = null)
     {
-        return await _fileRepository.UploadFileAsync(file, userId);
+        return await _fileRepository.UploadFileAsync(file, userId, folderId);
     }
 
     public async Task<OperationResult<Models.File>> DownloadSingleFileAsync(string fileId, string  userId)

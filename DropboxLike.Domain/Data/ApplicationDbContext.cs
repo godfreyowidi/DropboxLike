@@ -52,7 +52,7 @@ public class ApplicationDbContext : DbContext
             .HasOne(share => share.File)
             .WithMany(file => file.SharedWithUsers)
             .HasForeignKey(share => share.FileId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureShareFolder(ModelBuilder modelBuilder)
@@ -98,13 +98,13 @@ public class ApplicationDbContext : DbContext
             .HasOne(folder => folder.User)
             .WithMany(user => user.Folders)
             .HasForeignKey(folder => folder.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         // A parent-child relationship within folders
         modelBuilder.Entity<FolderEntity>()
             .HasOne(folder => folder.ParentFolder)
             .WithMany(parent => parent.ChildFolders)
             .HasForeignKey(folder => folder.ParentFolderId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

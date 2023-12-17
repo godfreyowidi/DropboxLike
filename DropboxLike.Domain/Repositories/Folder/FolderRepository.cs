@@ -17,37 +17,41 @@ public class FolderRepository : IFolderRepository
 
     public async Task<OperationResult<FolderEntity>> CreateFolderAsync(string folderName, string userId)
     {
-        var existingFolder =
-            await _applicationDbContext.Folders!.FirstOrDefaultAsync(f =>
-                f.FolderName == folderName && f.UserId == userId);
-
+        var existingFolder = await _applicationDbContext.Folders
+                                  .FirstOrDefaultAsync(f => f.FolderName == folderName && f.UserId == userId);
+    
         if (existingFolder != null)
         {
             string uniqueFolderName;
-            var counter = 1;
-
+            int counter = 1;
             do
             {
-                uniqueFolderName = $"{folderName}({counter})";
-                counter++;
-                existingFolder =
-                    await _applicationDbContext.Folders!.FirstOrDefaultAsync(f =>
-                        f.FolderName == uniqueFolderName && f.UserId == userId);
+                uniqueFolderName = $"{folderName}({counter++})";
+                existingFolder = await _applicationDbContext.Folders
+                                     .FirstOrDefaultAsync(f => f.FolderName == uniqueFolderName && f.UserId == userId);
             } while (existingFolder != null);
-
+    
             folderName = uniqueFolderName;
         }
-
+    
         var newFolder = new FolderEntity
         {
             FolderId = Guid.NewGuid().ToString(),
             FolderName = folderName,
             UserId = userId
         };
-
-        _applicationDbContext.Folders!.Add(newFolder);
-        await _applicationDbContext.SaveChangesAsync();
-        return OperationResult<FolderEntity>.Success(newFolder);
+    
+        try
+        {
+            _applicationDbContext.Folders!.Add(newFolder);
+            await _applicationDbContext.SaveChangesAsync();
+    
+            return OperationResult<FolderEntity>.Success(newFolder);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<FolderEntity>.Fail(ex.Message);
+        }
     }
     
      public async Task<OperationResult<FolderEntity>> GetFolderAsync(string folderId, string userId)

@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net;
-using System.Security.Claims;
 using System.Text;
 using Amazon;
 using Amazon.S3;
@@ -11,7 +10,6 @@ using DropboxLike.Domain.Data;
 using DropboxLike.Domain.Data.Entities;
 using DropboxLike.Domain.Models;
 using DropboxLike.Domain.Models.Responses;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -33,69 +31,81 @@ public class FileRepository : IFileRepository
         _applicationDbContext = applicationDbContext;
     }
 
-    public async Task<OperationResult<object>> UploadFileAsync(IFormFile file, string userId)
+    public async Task<OperationResult<object>> UploadFileAsync(IFormFile file, string userId, string? folderId = null)
+{
+    if (file == null || file.Length == 0)
     {
-
-        if (file == null || file.Length == 0)
-        {
-            return OperationResult<object>.Fail("Invalid file.", HttpStatusCode.BadRequest);
-        }
-
-        try
-        {
-            var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null)
-            {
-                return OperationResult<object>.Fail("User not found.", HttpStatusCode.NotFound);
-            }
-
-            using var newMemoryStream = new MemoryStream();
-            var filePath = $"user_{user.Id}/{file.FileName}";
-            await file.CopyToAsync(newMemoryStream);
-
-            var uploadRequest = new TransferUtilityUploadRequest
-            {
-                InputStream = newMemoryStream,
-                Key = filePath,
-                BucketName = _bucketName,
-                ContentType = file.ContentType,
-                CannedACL = S3CannedACL.NoACL
-            };
-
-            var transferUtility = new TransferUtility(_awsS3Client);
-
-            await transferUtility.UploadAsync(uploadRequest);
-
-            var fileModel = new FileEntity
-            {
-                FileKey = WebUtility.UrlEncode(uploadRequest.Key),
-                FileName = file.FileName,
-                FilePath = filePath,
-                FileSize = file.Length.ToString(),
-                ContentType = file.ContentType,
-                TimeStamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)
-            };
-
-            _applicationDbContext.FileModels?.Add(fileModel);
-
-            var entry = _applicationDbContext.Entry(fileModel);
-
-            await _applicationDbContext.SaveChangesAsync();
-
-            return OperationResult<object>.Success(new object(), HttpStatusCode.Created);
-        }
-        catch (AmazonS3Exception exception)
-        {
-            var message = $"{exception.StatusCode}: {exception.Message}";
-            return OperationResult<object>.Fail(exception, message, exception.StatusCode);
-        }
-        catch (Exception exception)
-        {
-            var message = $"{HttpStatusCode.InternalServerError}: {exception.Message}";
-            return OperationResult<object>.Fail(exception, message);
-        }
+        return OperationResult<object>.Fail("Invalid file.", HttpStatusCode.BadRequest);
     }
+
+    try
+    {
+        var user = await _applicationDbContext.AppUsers!.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return OperationResult<object>.Fail("User not found.", HttpStatusCode.NotFound);
+        }
+
+        string folderPath;
+        if (string.IsNullOrEmpty(folderId))
+        {
+            folderId = ""; // What do I do here
+            folderPath = $"user_{user.Id}/";
+        }
+        else
+        {
+            var folder = await _applicationDbContext.Folders.FirstOrDefaultAsync(f => f.FolderId == folderId && f.UserId == userId);
+            if (folder == null)
+            {
+                return OperationResult<object>.Fail("Folder not found.", HttpStatusCode.NotFound);
+            }
+            folderPath = $"user_{user.Id}/{folder.FolderName}/";
+        }
+
+        using var newMemoryStream = new MemoryStream();
+        var filePath = $"{folderPath}{file.FileName}";
+        await file.CopyToAsync(newMemoryStream);
+
+        var uploadRequest = new TransferUtilityUploadRequest
+        {
+            InputStream = newMemoryStream,
+            Key = filePath,
+            BucketName = _bucketName,
+            ContentType = file.ContentType,
+            CannedACL = S3CannedACL.NoACL
+        };
+
+        var transferUtility = new TransferUtility(_awsS3Client);
+        await transferUtility.UploadAsync(uploadRequest);
+
+        var fileModel = new FileEntity
+        {
+            FileKey = WebUtility.UrlEncode(uploadRequest.Key),
+            FileName = file.FileName,
+            FilePath = filePath,
+            FileSize = file.Length.ToString(),
+            ContentType = file.ContentType,
+            TimeStamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture),
+            FolderId = folderId,
+            UserId = userId
+        };
+
+        _applicationDbContext.FileModels?.Add(fileModel);
+        await _applicationDbContext.SaveChangesAsync();
+
+        return OperationResult<object>.Success(new object(), HttpStatusCode.Created);
+    }
+    catch (AmazonS3Exception exception)
+    {
+        var message = $"{exception.StatusCode}: {exception.Message}";
+        return OperationResult<object>.Fail(exception, message, exception.StatusCode);
+    }
+    catch (Exception exception)
+    {
+        var message = $"{HttpStatusCode.InternalServerError}: {exception.Message}";
+        return OperationResult<object>.Fail(exception, message);
+    }
+}
 
     public async Task<OperationResult<Models.File>> DownloadFileAsync(string fileId, string userId)
     {
@@ -399,7 +409,4 @@ public class FileRepository : IFileRepository
             throw; // or return Enumerable.Empty<FileEntity>();
         }
     }
-
-
-
 }
