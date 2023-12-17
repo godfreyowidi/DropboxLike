@@ -40,7 +40,7 @@ builder.Services.AddSignalRCore();
 // 2. Add lowest layer components, namely repositories.
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IShareFileRepository, ShareFileRepository>();
+builder.Services.AddScoped<IFileShareRepository, FileShareRepository>();
 
 // 3. Add higher layer components, namely services.
 builder.Services.AddScoped<IFileService, FileService>();

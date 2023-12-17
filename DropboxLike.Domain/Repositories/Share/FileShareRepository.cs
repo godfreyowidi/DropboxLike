@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DropboxLike.Domain.Repositories.Share;
 
-public class ShareFileRepository : IShareFileRepository
+public class FileShareRepository : IFileShareRepository
 {
     private readonly ApplicationDbContext _applicationDbContext;
 
-    public ShareFileRepository(ApplicationDbContext applicationDbContext)
+    public FileShareRepository(ApplicationDbContext applicationDbContext)
     {
         _applicationDbContext = applicationDbContext;
     }
@@ -30,11 +30,7 @@ public class ShareFileRepository : IShareFileRepository
                     return OperationResult<string>.Fail("File is already shared with the user.", HttpStatusCode.Conflict);
                 }
 
-<<<<<<< HEAD
-                var sharedFile = new ShareFile
-=======
                 var sharedFile = new FileShareEntity
->>>>>>> 18c886d4669ada5ddf808932b2237bb9b3c62ac6
                 {
                     UserId = userId,
                     FileId = fileId,

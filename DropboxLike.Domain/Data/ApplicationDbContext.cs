@@ -10,31 +10,11 @@ public class ApplicationDbContext : DbContext
     {
     }
     
-<<<<<<< HEAD
     public DbSet<FileEntity>? FileModels { get; set; }
     public DbSet<UserEntity>? AppUsers { get; set; }
-    public DbSet<ShareFile>? SharedFiles { get; set; }
+    public DbSet<FileShareEntity>? SharedFiles { get; set; }
     public DbSet<FolderEntity>? Folders { get; set; }
-    public DbSet<ShareFolder>? SharedFolders { get; set; }
-=======
-  public DbSet<FileEntity>? FileModels { get; set; }
-  public DbSet<UserEntity>? AppUsers { get; set;  }
-  public DbSet<FileShareEntity>? SharedFiles { get; set; }
-  
-  public DbSet<FolderEntity>? Folders { get; set; }
-  public DbSet<ShareFolder>? ShareFolders { get; set; }
-  public DbSet<FileFolder>? FileFolders { get; set; }
-  protected override void OnModelCreating(ModelBuilder modelBuilder)
-  {
-    ConfigureUserEntity(modelBuilder);
-    ConfigureShareEntity(modelBuilder);
-    ConfigureFileEntity(modelBuilder);
-    
-    base.OnModelCreating(modelBuilder);
-    
-    modelBuilder.Entity<FileFolder>()
-      .HasKey(ff => new { ff.FileId, ff.FolderId });
->>>>>>> 18c886d4669ada5ddf808932b2237bb9b3c62ac6
+    public DbSet<FolderShareEntity>? SharedFolders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,7 +22,7 @@ public class ApplicationDbContext : DbContext
         ConfigureUserEntity(modelBuilder);
         ConfigureShareEntity(modelBuilder);
         ConfigureFileEntity(modelBuilder);
-        ConfigureShareFolder(modelBuilder);
+        ConfigureFolderShareEntity(modelBuilder);
 
         // New folder configurations
         ConfigureFolderEntity(modelBuilder);
@@ -50,7 +30,6 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
     }
 
-<<<<<<< HEAD
     private static void ConfigureUserEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserEntity>()
@@ -60,71 +39,39 @@ public class ApplicationDbContext : DbContext
 
     private static void ConfigureShareEntity(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ShareFile>()
+        modelBuilder.Entity<FileShareEntity>()
             .HasKey(share => new { share.UserId, share.FileId });
-=======
-  private static void ConfigureShareEntity(ModelBuilder modelBuilder)
-  {
-    modelBuilder.Entity<FileShareEntity>()
-      .HasKey(share=> new { share.UserId, share.FileId });
 
-    modelBuilder.Entity<FileShareEntity>()
-      .HasOne<UserEntity>(share => share.User)
-      .WithMany(user => user.FileShares)
-      .OnDelete(DeleteBehavior.Cascade);
-  }
-  
-  private static void ConfigureShareFolder(ModelBuilder modelBuilder)
-  {
-    modelBuilder.Entity<ShareFolder>()
-      .HasKey(share=> new { share.UserId, share.FolderId });
->>>>>>> 18c886d4669ada5ddf808932b2237bb9b3c62ac6
-
-        modelBuilder.Entity<ShareFile>()
+        modelBuilder.Entity<FileShareEntity>()
             .HasOne(share => share.User)
             .WithMany(user => user.FileShares)
             .HasForeignKey(share => share.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<ShareFile>()
+        modelBuilder.Entity<FileShareEntity>()
             .HasOne(share => share.File)
             .WithMany(file => file.SharedWithUsers)
             .HasForeignKey(share => share.FileId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 
-    private static void ConfigureShareFolder(ModelBuilder modelBuilder)
+    private static void ConfigureFolderShareEntity(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ShareFolder>()
+        modelBuilder.Entity<FolderShareEntity>()
             .HasKey(share => new { share.UserId, share.FolderId });
 
-<<<<<<< HEAD
-        modelBuilder.Entity<ShareFolder>()
+        modelBuilder.Entity<FolderShareEntity>()
             .HasOne(share => share.User)
             .WithMany(user => user.FolderShares)
             .HasForeignKey(share => share.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<ShareFolder>()
+        modelBuilder.Entity<FolderShareEntity>()
             .HasOne(share => share.Folder)
             .WithMany(folder => folder.SharedWithUsers)
             .HasForeignKey(share => share.FolderId)
             .OnDelete(DeleteBehavior.Cascade);
     }
-=======
-    modelBuilder.Entity<FileEntity>()
-      .HasMany(f => f.Shares)
-      .WithOne(s => s.File)
-      .HasForeignKey(s => s.FileId);
-
-    modelBuilder.Entity<FileEntity>()
-      .HasMany(fr => fr.Shares)
-      .WithOne(sf => sf.File)
-      .HasForeignKey(sf => sf.FileId)
-      .OnDelete(DeleteBehavior.Cascade);
-  }
-}
->>>>>>> 18c886d4669ada5ddf808932b2237bb9b3c62ac6
 
     private static void ConfigureFileEntity(ModelBuilder modelBuilder)
     {

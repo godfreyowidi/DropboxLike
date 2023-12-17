@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DropboxLike.Domain.Repositories.Share;
 
-public class ShareFolderRepository : IShareFolderRespository
+public class FolderShareRepository : IFolderShareRepository
 {
     private readonly ApplicationDbContext _applicationDbContext;
     
-    public ShareFolderRepository(ApplicationDbContext applicationDbContext)
+    public FolderShareRepository(ApplicationDbContext applicationDbContext)
     {
         _applicationDbContext = applicationDbContext;
     }
@@ -28,13 +28,13 @@ public class ShareFolderRepository : IShareFolderRespository
                 return OperationResult<string>.Fail("Folder is already shared with the user.", HttpStatusCode.Conflict);
             }
 
-            var shareFolder = new ShareFolder
+            var FolderShareEntity = new FolderShareEntity
             {
                 FolderId = folderId,
                 UserId = shareWithUserId
             };
 
-            _applicationDbContext.SharedFolders!.Add(shareFolder);
+            _applicationDbContext.SharedFolders!.Add(FolderShareEntity);
             await _applicationDbContext.SaveChangesAsync();
 
             return OperationResult<string>.Success("Folder shared successfully.");
@@ -45,7 +45,7 @@ public class ShareFolderRepository : IShareFolderRespository
         }
     }
 
-    public async Task<OperationResult<bool>> UnshareFolderWithUserAsync(string folderId, string userId, string unshareWithUserId)
+    public async Task<OperationResult<bool>> UnFolderShareEntityWithUserAsync(string folderId, string userId, string unshareWithUserId)
     {
         try
         {
@@ -57,15 +57,15 @@ public class ShareFolderRepository : IShareFolderRespository
                 return OperationResult<bool>.Fail("Folder not found or user lacks permission to unshare it.", HttpStatusCode.Unauthorized);
             }
 
-            var shareFolder = await _applicationDbContext.SharedFolders!
+            var FolderShareEntity = await _applicationDbContext.SharedFolders!
                 .FirstOrDefaultAsync(sf => sf.FolderId == folderId && sf.UserId == unshareWithUserId);
 
-            if (shareFolder == null)
+            if (FolderShareEntity == null)
             {
                 return OperationResult<bool>.Fail("Shared folder entry not found.", HttpStatusCode.NotFound);
             }
 
-            _applicationDbContext.SharedFolders!.Remove(shareFolder);
+            _applicationDbContext.SharedFolders!.Remove(FolderShareEntity);
             await _applicationDbContext.SaveChangesAsync();
 
             return OperationResult<bool>.Success(true);

@@ -4,7 +4,7 @@ using DropboxLike.Domain.Models.Requests;
 
 namespace DropboxLike.Domain.Repositories.Share;
 
-public interface IShareFolderRespository
+public interface IFolderShareRepository
 {
     Task<OperationResult<string>> ShareFolderWithUserAsync(string folderId, string userId, string shareWithUserId);
 }
