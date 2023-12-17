@@ -19,11 +19,11 @@ public class FileController : BaseController
   
   [HttpPost]
   [Route("Upload")]
-  public async Task<IActionResult> UploadFileAsync(IFormFile file)
+  public async Task<IActionResult> UploadFileAsync(IFormFile file, string? folderId = null)
   {
     var userId = GetUserIdFromClaim();
 
-    var response = await _fileService.UploadSingleFileAsync(file, userId);
+    var response = await _fileService.UploadSingleFileAsync(file, userId, folderId);
 
     return StatusCode(response.StatusCode);
   }

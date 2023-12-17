@@ -12,7 +12,15 @@ public class FileEntity
   public string? FilePath { get; set; }
   public string? ContentType { get; set; }
   public string? TimeStamp { get; set; }
+    
+  // Reference to the User
+  public string UserId { get; set; }
+  public virtual UserEntity User { get; set; }
 
-  public FolderEntity Folder { get; set; } = null!;
-  public IEnumerable<FileShareEntity> Shares { get; set; } = new List<FileShareEntity>();
+  // Reference to the Folder
+  public string? FolderId { get; set; }
+  public virtual FolderEntity? Folder { get; set; }
+
+  // Shared information
+  public virtual ICollection<ShareFile> SharedWithUsers { get; set; } = new List<ShareFile>();
 }

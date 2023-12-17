@@ -6,5 +6,5 @@ public class FolderShareEntity
     public string FolderId { get; set; }
 
     public UserEntity User { get; set; } = null!;
-    public FolderEntity Folder { get; set; } = null!;
+    public virtual FolderEntity Folder { get; set; } = null!;
 }

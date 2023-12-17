@@ -6,5 +6,5 @@ namespace DropboxLike.Domain.Repositories.Share;
 
 public interface IShareFolderRespository
 {
-    Task<OperationResult<string>> ShareFolderWithUserAsync(IEnumerable<string> userIds, string folderId);
+    Task<OperationResult<string>> ShareFolderWithUserAsync(string folderId, string userId, string shareWithUserId);
 }
